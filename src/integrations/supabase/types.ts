@@ -68,6 +68,39 @@ export type Database = {
         }
         Relationships: []
       }
+      note_requests: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_fulfilled: boolean | null
+          semester: string | null
+          subject: string
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_fulfilled?: boolean | null
+          semester?: string | null
+          subject: string
+          topic: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_fulfilled?: boolean | null
+          semester?: string | null
+          subject?: string
+          topic?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           created_at: string | null
