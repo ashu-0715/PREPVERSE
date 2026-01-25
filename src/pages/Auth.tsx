@@ -6,18 +6,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, User, BookOpen } from "lucide-react";
+
+type UserRole = "student" | "faculty";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<UserRole>("student");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@rmd\.ac\.in$/i;
+    return emailRegex.test(email);
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateEmail(email)) {
+      toast.error("Please use your RMD college email (@rmd.ac.in)");
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -30,7 +44,7 @@ const Auth = () => {
         toast.success("Welcome back!");
         navigate("/dashboard");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -41,6 +55,18 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+        
+        // Insert user role after signup
+        if (data.user) {
+          const { error: roleError } = await supabase
+            .from("user_roles")
+            .insert({ user_id: data.user.id, role });
+          
+          if (roleError) {
+            console.error("Error setting role:", roleError);
+          }
+        }
+        
         toast.success("Account created! You can now log in.");
         navigate("/dashboard");
       }
@@ -65,6 +91,39 @@ const Auth = () => {
           {isLogin ? "Welcome Back" : "Join PrepVerse"}
         </h2>
 
+        {/* Role Selection for Signup */}
+        {!isLogin && (
+          <div className="mb-6">
+            <Label className="mb-3 block text-center">I am a</Label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setRole("student")}
+                className={`flex-1 p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
+                  role === "student"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <BookOpen className="w-6 h-6" />
+                <span className="font-medium">Student</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole("faculty")}
+                className={`flex-1 p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
+                  role === "faculty"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <User className="w-6 h-6" />
+                <span className="font-medium">Faculty</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleAuth} className="space-y-4">
           {!isLogin && (
             <div>
@@ -76,12 +135,13 @@ const Auth = () => {
                 onChange={(e) => setFullName(e.target.value)}
                 required={!isLogin}
                 className="mt-1"
+                placeholder="Enter your full name"
               />
             </div>
           )}
 
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">College Email</Label>
             <Input
               id="email"
               type="email"
@@ -89,7 +149,11 @@ const Auth = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="mt-1"
+              placeholder="yourname@rmd.ac.in"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Only @rmd.ac.in emails are accepted
+            </p>
           </div>
 
           <div>
@@ -102,6 +166,7 @@ const Auth = () => {
               required
               minLength={6}
               className="mt-1"
+              placeholder="Enter your password"
             />
           </div>
 
