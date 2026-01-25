@@ -15,6 +15,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -31,7 +42,9 @@ import {
   MessageSquarePlus,
   CheckCircle,
   Clock,
-  User,
+  Search,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -94,6 +107,7 @@ const Notes = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Upload form state
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -101,6 +115,13 @@ const Notes = () => {
   const [uploadSubject, setUploadSubject] = useState("");
   const [uploadSemester, setUploadSemester] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+
+  // Edit form state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editSubject, setEditSubject] = useState("");
+  const [editSemester, setEditSemester] = useState("");
 
   // Request form state
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
@@ -201,6 +222,60 @@ const Notes = () => {
     }
   };
 
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingNote || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from("notes")
+        .update({
+          title: editTitle,
+          subject: editSubject,
+          semester: editSemester || null,
+        })
+        .eq("id", editingNote.id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Note updated successfully!");
+      setEditDialogOpen(false);
+      setEditingNote(null);
+      fetchNotes();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update note");
+    }
+  };
+
+  const handleDelete = async (noteId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("notes")
+        .delete()
+        .eq("id", noteId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Note deleted successfully!");
+      fetchNotes();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete note");
+    }
+  };
+
+  const openEditDialog = (note: Note) => {
+    setEditingNote(note);
+    setEditTitle(note.title);
+    setEditSubject(note.subject);
+    setEditSemester(note.semester || "");
+    setEditDialogOpen(true);
+  };
+
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -268,6 +343,16 @@ const Notes = () => {
       fetchNoteRequests();
     }
   };
+
+  // Filter notes based on search query
+  const filteredNotes = notes.filter((note) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      note.title.toLowerCase().includes(query) ||
+      note.subject.toLowerCase().includes(query) ||
+      (note.semester && note.semester.toLowerCase().includes(query))
+    );
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -460,11 +545,24 @@ const Notes = () => {
           </Card>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search notes by title, subject, or semester..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         <Tabs defaultValue="notes" className="space-y-6">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="notes" className="gap-2">
               <FileText className="w-4 h-4" />
-              All Notes ({notes.length})
+              All Notes ({filteredNotes.length})
             </TabsTrigger>
             <TabsTrigger value="requests" className="gap-2">
               <MessageSquarePlus className="w-4 h-4" />
@@ -477,20 +575,26 @@ const Notes = () => {
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               </div>
-            ) : notes.length === 0 ? (
+            ) : filteredNotes.length === 0 ? (
               <Card className="p-12 text-center">
                 <Upload className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">No notes yet</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  {searchQuery ? "No notes found" : "No notes yet"}
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  Be the first to share study materials
+                  {searchQuery
+                    ? "Try a different search term"
+                    : "Be the first to share study materials"}
                 </p>
-                <Button onClick={() => setUploadDialogOpen(true)}>
-                  Upload Your First Note
-                </Button>
+                {!searchQuery && (
+                  <Button onClick={() => setUploadDialogOpen(true)}>
+                    Upload Your First Note
+                  </Button>
+                )}
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {notes.map((note) => (
+                {filteredNotes.map((note) => (
                   <Card
                     key={note.id}
                     className="p-6 hover:shadow-elegant transition-all group"
@@ -516,7 +620,7 @@ const Notes = () => {
                       </div>
                     )}
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mb-3">
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -536,6 +640,50 @@ const Notes = () => {
                         Download
                       </Button>
                     </div>
+
+                    {/* Edit/Delete for note owner */}
+                    {user?.id === note.user_id && (
+                      <div className="flex gap-2 pt-3 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="flex-1 gap-2 text-muted-foreground hover:text-primary"
+                          onClick={() => openEditDialog(note)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                          Edit
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="flex-1 gap-2 text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Note</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{note.title}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(note.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
                   </Card>
                 ))}
               </div>
@@ -626,6 +774,67 @@ const Notes = () => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Edit Note Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Note</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div>
+                <Label htmlFor="editTitle">Title *</Label>
+                <Input
+                  id="editTitle"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="editSubject">Subject *</Label>
+                <Select
+                  value={editSubject}
+                  onValueChange={setEditSubject}
+                  required
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUBJECTS.map((subject) => (
+                      <SelectItem key={subject} value={subject}>
+                        {subject}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="editSemester">Semester</Label>
+                <Select
+                  value={editSemester}
+                  onValueChange={setEditSemester}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SEMESTERS.map((sem) => (
+                      <SelectItem key={sem} value={sem}>
+                        {sem}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full">
+                Save Changes
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
