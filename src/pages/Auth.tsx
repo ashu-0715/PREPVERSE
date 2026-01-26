@@ -36,11 +36,25 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+        
+        // Track login session and activity
+        if (data.user) {
+          await supabase.from("user_sessions").insert({
+            user_id: data.user.id,
+            is_active: true,
+          });
+          await supabase.from("user_activity").insert({
+            user_id: data.user.id,
+            action: "login",
+            details: { timestamp: new Date().toISOString() },
+          });
+        }
+        
         toast.success("Welcome back!");
         navigate("/dashboard");
       } else {
@@ -179,16 +193,25 @@ const Auth = () => {
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-4 text-center space-y-2">
           <button
             type="button"
             onClick={() => setIsLogin(!isLogin)}
-            className="text-primary hover:underline"
+            className="text-primary hover:underline block w-full"
           >
             {isLogin
               ? "Don't have an account? Sign up"
               : "Already have an account? Sign in"}
           </button>
+          {isLogin && (
+            <button
+              type="button"
+              onClick={() => navigate("/forgot-password")}
+              className="text-muted-foreground hover:text-primary hover:underline text-sm"
+            >
+              Forgot password?
+            </button>
+          )}
         </div>
       </Card>
     </div>
