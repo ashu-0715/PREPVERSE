@@ -126,7 +126,7 @@ const Auth = () => {
         {isLogin && (
           <div className="mb-6">
             <Label className="mb-3 block text-center">Login as</Label>
-            <div className="flex gap-3">
+            <div className="flex gap-3 mb-3">
               <button
                 type="button"
                 onClick={() => setLoginType("student")}
@@ -156,14 +156,22 @@ const Auth = () => {
                 onClick={() => setLoginType("admin")}
                 className={`flex-1 p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
                   loginType === "admin"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:border-primary/50"
+                    ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    : "border-amber-200 hover:border-amber-400 text-amber-600/70 dark:border-amber-800 dark:hover:border-amber-600 dark:text-amber-400/70"
                 }`}
               >
                 <Shield className="w-5 h-5" />
                 <span className="font-medium text-sm">Admin</span>
               </button>
             </div>
+            {loginType === "admin" && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  Admin access is restricted to authorized personnel only.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
