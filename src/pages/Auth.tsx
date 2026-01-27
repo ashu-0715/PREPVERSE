@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { GraduationCap, User, BookOpen } from "lucide-react";
+import { GraduationCap, User, BookOpen, Shield } from "lucide-react";
 
 type UserRole = "student" | "faculty";
+type LoginType = "student" | "faculty" | "admin";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,6 +17,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<UserRole>("student");
+  const [loginType, setLoginType] = useState<LoginType>("student");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -42,21 +44,36 @@ const Auth = () => {
         });
         if (error) throw error;
         
-        // Track login session and activity
         if (data.user) {
+          // Check user role for admin login
+          if (loginType === "admin") {
+            const { data: roleData, error: roleError } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", data.user.id)
+              .maybeSingle();
+
+            if (roleError || roleData?.role !== "admin") {
+              await supabase.auth.signOut();
+              toast.error("Access denied. Admin privileges required.");
+              return;
+            }
+          }
+
+          // Track login session and activity
           await supabase.from("user_sessions").insert({
             user_id: data.user.id,
             is_active: true,
           });
           await supabase.from("user_activity").insert({
             user_id: data.user.id,
-            action: "login",
+            action: loginType === "admin" ? "admin_login" : "login",
             details: { timestamp: new Date().toISOString() },
           });
+          
+          toast.success(loginType === "admin" ? "Welcome, Admin!" : "Welcome back!");
+          navigate(loginType === "admin" ? "/admin" : "/dashboard");
         }
-        
-        toast.success("Welcome back!");
-        navigate("/dashboard");
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -104,6 +121,51 @@ const Auth = () => {
         <h2 className="text-2xl font-semibold text-center mb-6">
           {isLogin ? "Welcome Back" : "Join PrepVerse"}
         </h2>
+
+        {/* Login Type Selection for Login */}
+        {isLogin && (
+          <div className="mb-6">
+            <Label className="mb-3 block text-center">Login as</Label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setLoginType("student")}
+                className={`flex-1 p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
+                  loginType === "student"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <BookOpen className="w-5 h-5" />
+                <span className="font-medium text-sm">Student</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginType("faculty")}
+                className={`flex-1 p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
+                  loginType === "faculty"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <User className="w-5 h-5" />
+                <span className="font-medium text-sm">Faculty</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginType("admin")}
+                className={`flex-1 p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
+                  loginType === "admin"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <Shield className="w-5 h-5" />
+                <span className="font-medium text-sm">Admin</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Role Selection for Signup */}
         {!isLogin && (
@@ -196,7 +258,10 @@ const Auth = () => {
         <div className="mt-4 text-center space-y-2">
           <button
             type="button"
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setLoginType("student");
+            }}
             className="text-primary hover:underline block w-full"
           >
             {isLogin
