@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 
 import Admin from "./pages/Admin";
+import Faculty from "./pages/Faculty";
 import Dashboard from "./pages/Dashboard";
 import Career from "./pages/Career";
 import Notes from "./pages/Notes";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             
             <Route path="/admin" element={<Admin />} />
+            <Route path="/faculty" element={<Faculty />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/career" element={<Career />} />
             <Route path="/notes" element={<Notes />} />
