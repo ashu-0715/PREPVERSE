@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Shield,
   Users,
@@ -66,7 +67,7 @@ const Admin = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        navigate("/admin-login");
+        navigate("/auth");
         return;
       }
 
@@ -78,14 +79,14 @@ const Admin = () => {
 
       if (roleData?.role !== "admin") {
         toast.error("Access denied");
-        navigate("/admin-login");
+        navigate("/auth");
         return;
       }
 
       await fetchAdminData();
     } catch (error) {
       console.error("Error:", error);
-      navigate("/admin-login");
+      navigate("/auth");
     }
   };
 
@@ -116,7 +117,7 @@ const Admin = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/admin-login");
+    navigate("/auth");
   };
 
   const filteredUsers = data?.users.filter(user =>
@@ -142,6 +143,7 @@ const Admin = () => {
             <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Button variant="outline" size="sm" onClick={fetchAdminData}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh

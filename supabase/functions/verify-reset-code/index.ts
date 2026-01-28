@@ -1,17 +1,22 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-// Allowed origins for CORS
+// Allowed origins for CORS - include all Lovable domains
 const allowedOrigins = [
   "https://prepverse-for-students.lovable.app",
   "https://id-preview--03d1bf87-504b-46dd-bebe-c3667b1313d0.lovable.app",
+  "https://03d1bf87-504b-46dd-bebe-c3667b1313d0.lovableproject.com",
   "http://localhost:5173",
   "http://localhost:8080",
 ];
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || "";
-  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  // Allow all lovable origins dynamically
+  const isAllowedOrigin = allowedOrigins.includes(origin) || 
+    origin.endsWith('.lovable.app') || 
+    origin.endsWith('.lovableproject.com');
+  const allowedOrigin = isAllowedOrigin ? origin : allowedOrigins[0];
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers":
