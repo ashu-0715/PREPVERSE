@@ -1,13 +1,49 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// Allowed origins for CORS
+const allowedOrigins = [
+  "https://prepverse-for-students.lovable.app",
+  "https://id-preview--03d1bf87-504b-46dd-bebe-c3667b1313d0.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+// Simple in-memory rate limiting (per admin user)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 10; // 10 requests per minute
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+  
+  if (!userLimit || now > userLimit.resetTime) {
+    rateLimitMap.set(userId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  
+  if (userLimit.count >= MAX_REQUESTS_PER_WINDOW) {
+    return false;
+  }
+  
+  userLimit.count++;
+  return true;
+}
 
 const handler = async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -40,6 +76,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     const userId = authData.user.id;
 
+    // Check rate limit before proceeding
+    if (!checkRateLimit(userId)) {
+      console.warn(`Rate limit exceeded for admin user: ${userId}`);
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please wait before making more requests." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Use service role to check admin status
     const adminSupabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -56,6 +101,9 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    // Log admin data access for audit
+    console.log(`Admin data access by user: ${userId} at ${new Date().toISOString()}`);
 
     // Fetch all users
     const { data: allUsersData, error: listUsersError } = await adminSupabase.auth.admin.listUsers();
