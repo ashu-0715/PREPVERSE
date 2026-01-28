@@ -54,9 +54,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate 4-digit code
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    // Generate 6-character alphanumeric code for better security
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const code = Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // Invalidate any existing codes for this user
     await supabase
@@ -96,9 +97,9 @@ const handler = async (req: Request): Promise<Response> => {
             <h1 style="color: #6366f1;">PrepVerse Password Reset</h1>
             <p>You requested to reset your password. Use the following code:</p>
             <div style="background: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #6366f1;">${code}</span>
+              <span style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #6366f1;">${code}</span>
             </div>
-            <p>This code will expire in 15 minutes.</p>
+            <p>This code will expire in 10 minutes.</p>
             <p>If you didn't request this, you can safely ignore this email.</p>
           </div>
         `,

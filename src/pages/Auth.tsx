@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { GraduationCap, User, BookOpen, Shield } from "lucide-react";
 
-type UserRole = "student" | "faculty";
 type LoginType = "student" | "faculty" | "admin";
 
 const Auth = () => {
@@ -16,7 +15,6 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<UserRole>("student");
   const [loginType, setLoginType] = useState<LoginType>("student");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -87,16 +85,8 @@ const Auth = () => {
         });
         if (error) throw error;
         
-        // Insert user role after signup
-        if (data.user) {
-          const { error: roleError } = await supabase
-            .from("user_roles")
-            .insert({ user_id: data.user.id, role });
-          
-          if (roleError) {
-            console.error("Error setting role:", roleError);
-          }
-        }
+        // Role is now automatically assigned as 'student' by database trigger
+        // Admins can promote users to faculty/admin through the admin panel
         
         toast.success("Account created! You can now log in.");
         navigate("/dashboard");
@@ -175,36 +165,13 @@ const Auth = () => {
           </div>
         )}
 
-        {/* Role Selection for Signup */}
+        {/* Signup info */}
         {!isLogin && (
-          <div className="mb-6">
-            <Label className="mb-3 block text-center">I am a</Label>
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => setRole("student")}
-                className={`flex-1 p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
-                  role === "student"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <BookOpen className="w-6 h-6" />
-                <span className="font-medium">Student</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole("faculty")}
-                className={`flex-1 p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
-                  role === "faculty"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <User className="w-6 h-6" />
-                <span className="font-medium">Faculty</span>
-              </button>
-            </div>
+          <div className="mb-4 p-3 rounded-lg bg-muted/50 border">
+            <p className="text-sm text-muted-foreground text-center">
+              New accounts are created as <strong>Student</strong> by default. 
+              Contact an administrator for faculty or admin access.
+            </p>
           </div>
         )}
 
