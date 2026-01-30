@@ -69,29 +69,8 @@ const Auth = () => {
             details: { timestamp: new Date().toISOString() },
           });
           
-          if (loginType === "admin") {
-            toast.success("Welcome, Admin!");
-            navigate("/admin");
-          } else if (loginType === "faculty") {
-            // Check if user has faculty role
-            const { data: facultyRole } = await supabase
-              .from("user_roles")
-              .select("role")
-              .eq("user_id", data.user.id)
-              .maybeSingle();
-            
-            if (facultyRole?.role === "faculty" || facultyRole?.role === "admin") {
-              toast.success("Welcome, Faculty!");
-              navigate("/faculty");
-            } else {
-              toast.error("Access denied. Faculty privileges required.");
-              await supabase.auth.signOut();
-              return;
-            }
-          } else {
-            toast.success("Welcome back!");
-            navigate("/dashboard");
-          }
+          toast.success(loginType === "admin" ? "Welcome, Admin!" : "Welcome back!");
+          navigate(loginType === "admin" ? "/admin" : "/dashboard");
         }
       } else {
         const { data, error } = await supabase.auth.signUp({
