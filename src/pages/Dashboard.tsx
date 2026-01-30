@@ -3,8 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { EditProfileDialog } from "@/components/EditProfileDialog";
 import {
   BookOpen,
   TrendingUp,
@@ -13,10 +16,24 @@ import {
   Award,
   LogOut,
   Target,
+  MapPin,
+  GraduationCap,
 } from "lucide-react";
 
+interface Profile {
+  id: string;
+  full_name: string;
+  email: string;
+  avatar_url?: string;
+  bio?: string;
+  department?: string;
+  year_of_study?: string;
+  skills?: string[];
+  streak_days?: number;
+}
+
 const Dashboard = () => {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [badges, setBadges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -123,38 +140,93 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
+        {/* Profile Card */}
         <Card className="p-6 mb-8 bg-gradient-card shadow-card">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-3xl font-bold mb-2">
-                Welcome back, {profile?.full_name}!
-              </h2>
-              <p className="text-muted-foreground">
-                Continue your learning journey today
-              </p>
-              <div className="flex items-center gap-4 mt-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">🔥</span>
-                  <span className="font-semibold">{profile?.streak_days} day streak</span>
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Avatar and Basic Info */}
+            <div className="flex items-start gap-4">
+              <Avatar className="w-20 h-20 border-4 border-primary/20">
+                <AvatarImage src={profile?.avatar_url} />
+                <AvatarFallback className="text-2xl bg-primary/10">
+                  {profile?.full_name
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h2 className="text-2xl font-bold">{profile?.full_name}</h2>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🔥</span>
+                    <span className="font-semibold text-orange-500">
+                      {profile?.streak_days || 0} day streak
+                    </span>
+                  </div>
                 </div>
+                <p className="text-muted-foreground">{profile?.email}</p>
+                
+                {/* Department and Year */}
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {profile?.department && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <MapPin className="w-3 h-3" />
+                      {profile.department}
+                    </div>
+                  )}
+                  {profile?.year_of_study && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <GraduationCap className="w-3 h-3" />
+                      {profile.year_of_study}
+                    </div>
+                  )}
+                </div>
+
+                {/* Bio */}
+                {profile?.bio && (
+                  <p className="mt-3 text-sm text-foreground/80">{profile.bio}</p>
+                )}
+
+                {/* Skills */}
+                {profile?.skills && profile.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {profile.skills.map((skill) => (
+                      <Badge key={skill} variant="secondary" className="text-xs">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-            <div className="flex gap-2">
-              {badges.slice(0, 3).map((badge) => (
-                <div
-                  key={badge.id}
-                  className="text-3xl"
-                  title={badge.badges.description}
-                >
-                  {badge.badges.icon}
-                </div>
-              ))}
+
+            {/* Edit Button and Badges */}
+            <div className="flex flex-col items-end gap-4 ml-auto">
+              {profile && (
+                <EditProfileDialog
+                  profile={profile}
+                  onProfileUpdate={setProfile}
+                />
+              )}
+              <div className="flex gap-2">
+                {badges.slice(0, 3).map((badge) => (
+                  <div
+                    key={badge.id}
+                    className="text-3xl"
+                    title={badge.badges.description}
+                  >
+                    {badge.badges.icon}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </Card>
 
         {/* Modules Grid */}
+        <h3 className="text-xl font-semibold mb-4">Explore Modules</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {modules.map((module) => (
             <Card
