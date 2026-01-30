@@ -45,7 +45,9 @@ import {
   Search,
   Pencil,
   Trash2,
+  User,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 
 interface Note {
@@ -58,6 +60,10 @@ interface Note {
   rating_count: number | null;
   created_at: string | null;
   user_id: string;
+  profile?: {
+    full_name: string;
+    avatar_url?: string;
+  };
 }
 
 interface NoteRequest {
@@ -149,8 +155,28 @@ const Notes = () => {
 
     if (error) {
       toast.error("Failed to load notes");
+      setLoading(false);
+      return;
+    }
+
+    // Fetch profiles for note uploaders
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map((n) => n.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", userIds);
+
+      const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
+
+      const notesWithProfiles = data.map((note) => ({
+        ...note,
+        profile: profileMap.get(note.user_id),
+      }));
+
+      setNotes(notesWithProfiles);
     } else {
-      setNotes(data || []);
+      setNotes([]);
     }
     setLoading(false);
   };
@@ -614,6 +640,24 @@ const Notes = () => {
                       )}
                     </div>
                     
+                    {/* Uploader info */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <Avatar className="w-6 h-6">
+                        <AvatarImage src={note.profile?.avatar_url} />
+                        <AvatarFallback className="text-xs bg-primary/10">
+                          {note.profile?.full_name
+                            ?.split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2) || <User className="w-3 h-3" />}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-muted-foreground">
+                        Shared by <span className="font-medium text-foreground">{note.profile?.full_name || "Anonymous"}</span>
+                      </span>
+                    </div>
+
                     {note.semester && (
                       <div className="inline-block px-2 py-1 bg-muted rounded text-xs mb-4">
                         {note.semester}
