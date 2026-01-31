@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
+import FoundersSection from "@/components/FoundersSection";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -55,26 +56,6 @@ const Index = () => {
     },
   ];
 
-  const testimonials = [
-    {
-      name: "Priya Sharma",
-      role: "Computer Science Student",
-      content: "PrepVerse helped me find my career path and connected me with amazing study partners!",
-      avatar: "PS",
-    },
-    {
-      name: "Rahul Verma",
-      role: "Engineering Student",
-      content: "The notes sharing feature saved me hours of preparation time. Highly recommended!",
-      avatar: "RV",
-    },
-    {
-      name: "Ananya Patel",
-      role: "Aspiring Data Scientist",
-      content: "I love the progress tracker! It keeps me motivated to learn something new every day.",
-      avatar: "AP",
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -161,34 +142,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Loved by Students Everywhere</h2>
-            <p className="text-xl text-muted-foreground">
-              See what our community has to say
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="p-6 bg-card shadow-card">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold">
-                    {testimonial.avatar}
-                  </div>
-                  <div>
-                    <div className="font-semibold">{testimonial.name}</div>
-                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                  </div>
-                </div>
-                <p className="text-muted-foreground italic">"{testimonial.content}"</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Founders Section */}
+      <FoundersSection />
 
       {/* CTA Section */}
       <section className="py-20 bg-gradient-hero">
