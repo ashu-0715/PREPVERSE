@@ -21,11 +21,12 @@ function getCorsHeaders(req: Request) {
   const isAllowedOrigin = allowedOrigins.includes(origin) || 
     origin.endsWith('.lovable.app') || 
     origin.endsWith('.lovableproject.com');
-  const allowedOrigin = isAllowedOrigin ? origin : allowedOrigins[0];
+  const allowedOrigin = isAllowedOrigin ? origin : "*";
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, x-stainless-arch, x-stainless-lang, x-stainless-os, x-stainless-package-version, x-stainless-retry-count, x-stainless-runtime, x-stainless-runtime-version",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   };
 }
 
