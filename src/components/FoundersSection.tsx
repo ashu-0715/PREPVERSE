@@ -9,22 +9,22 @@ import aswiniImg from "@/assets/founders/aswini.jpeg";
 
 const founders = [
   {
-    name: "Avanthika J",
-    role: "Co-Founder",
+    name: "AVANTHIKA J",
+    role: "Founder",
     image: avanthikaImg,
     quote: "Empowering students to discover their true potential through technology.",
   },
   {
-    name: "Bhavishya L",
-    role: "Co-Founder",
-    image: bhavishyaImg,
-    quote: "Building bridges between learning and career success.",
-  },
-  {
-    name: "Aswini E",
-    role: "Co-Founder",
+    name: "ASWINI E",
+    role: "Founder",
     image: aswiniImg,
     quote: "Creating a community where knowledge sharing transforms lives.",
+  },
+  {
+    name: "BHAVISHYA L",
+    role: "Founder",
+    image: bhavishyaImg,
+    quote: "Building bridges between learning and career success.",
   },
 ];
 
@@ -86,7 +86,7 @@ const FoundersSection = () => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <h3 className="text-xl font-semibold mb-1">{founder.name}</h3>
+                <h3 className="text-xl font-bold mb-1">{founder.name}</h3>
                 <p className="text-sm text-primary font-medium mb-3">{founder.role}</p>
                 <p className="text-muted-foreground italic text-sm">"{founder.quote}"</p>
               </div>
@@ -115,7 +115,7 @@ const FoundersSection = () => {
                               className="w-full h-full object-cover"
                             />
                           </div>
-                          <h3 className="text-lg font-semibold mb-1">{founder.name}</h3>
+                          <h3 className="text-lg font-bold mb-1">{founder.name}</h3>
                           <p className="text-sm text-primary font-medium mb-3">{founder.role}</p>
                           <p className="text-muted-foreground italic text-sm">"{founder.quote}"</p>
                         </div>

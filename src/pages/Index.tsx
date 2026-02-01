@@ -152,7 +152,7 @@ const Index = () => {
             Ready to Transform Your Learning Journey?
           </h2>
           <p className="text-xl mb-8 text-white/90 max-w-2xl mx-auto">
-            Join thousands of students already using PrepVerse to achieve their academic and career goals.
+            Be among the first to experience PrepVerse and start your journey towards academic excellence.
           </p>
           <Button size="lg" variant="secondary" onClick={() => navigate("/auth")}>
             Join Now – It's Free!
