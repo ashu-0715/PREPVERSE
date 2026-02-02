@@ -116,6 +116,14 @@ const Admin = () => {
   };
 
   const handleLogout = async () => {
+    // Mark admin sessions as inactive before logout
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from("user_sessions")
+        .update({ is_active: false, last_active_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+    }
     await supabase.auth.signOut();
     navigate("/auth");
   };

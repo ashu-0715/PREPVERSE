@@ -67,6 +67,13 @@ const Dashboard = () => {
   };
 
   const handleLogout = async () => {
+    // Mark all user sessions as inactive before logging out
+    if (profile?.id) {
+      await supabase
+        .from("user_sessions")
+        .update({ is_active: false, last_active_at: new Date().toISOString() })
+        .eq("user_id", profile.id);
+    }
     await supabase.auth.signOut();
     toast.success("Logged out successfully");
     navigate("/");
