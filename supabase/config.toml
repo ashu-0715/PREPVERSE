@@ -1,1 +1,4 @@
 project_id = "wldmmwntzixpruoxtlxg"
+
+[functions.generate-skill-image]
+verify_jwt = false
