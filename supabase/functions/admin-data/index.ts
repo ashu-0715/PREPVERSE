@@ -148,12 +148,23 @@ const handler = async (req: Request): Promise<Response> => {
       .limit(100);
 
     // Combine user data
+    // Consider a user "active" if they have a session that was active in the last 5 minutes
+    const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+    const now = Date.now();
+    
     const users = allUsersData.users.map((user: any) => {
       const profile = profiles?.find((p: any) => p.id === user.id);
       const role = roles?.find((r: any) => r.user_id === user.id);
       const userNotes = notes?.filter((n: any) => n.user_id === user.id) || [];
       const userSessions = sessions?.filter((s: any) => s.user_id === user.id) || [];
       const userActivity = activity?.filter((a: any) => a.user_id === user.id) || [];
+
+      // Check if user has an active session that was updated within the threshold
+      const isActive = userSessions.some((s: any) => {
+        if (!s.is_active) return false;
+        const lastActive = new Date(s.last_active_at).getTime();
+        return (now - lastActive) < ACTIVE_THRESHOLD_MS;
+      });
 
       return {
         id: user.id,
@@ -166,7 +177,7 @@ const handler = async (req: Request): Promise<Response> => {
         notes: userNotes,
         sessions: userSessions,
         activity: userActivity,
-        isActive: userSessions.some((s: any) => s.is_active),
+        isActive,
       };
     });
 
