@@ -209,6 +209,147 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_availability: {
+        Row: {
+          available_date: string
+          created_at: string | null
+          end_time: string
+          id: string
+          is_booked: boolean | null
+          post_id: string
+          start_time: string
+          user_id: string
+        }
+        Insert: {
+          available_date: string
+          created_at?: string | null
+          end_time: string
+          id?: string
+          is_booked?: boolean | null
+          post_id: string
+          start_time: string
+          user_id: string
+        }
+        Update: {
+          available_date?: string
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          is_booked?: boolean | null
+          post_id?: string
+          start_time?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_availability_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "skill_posts_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_badges: {
+        Row: {
+          created_at: string | null
+          criteria: Json | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          criteria?: Json | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          criteria?: Json | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      skill_connections: {
+        Row: {
+          connection_type: Database["public"]["Enums"]["session_mode"] | null
+          created_at: string | null
+          id: string
+          message: string | null
+          post_id: string
+          post_owner_id: string
+          requester_id: string
+          status: Database["public"]["Enums"]["connection_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          connection_type?: Database["public"]["Enums"]["session_mode"] | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          post_id: string
+          post_owner_id: string
+          requester_id: string
+          status?: Database["public"]["Enums"]["connection_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          connection_type?: Database["public"]["Enums"]["session_mode"] | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          post_id?: string
+          post_owner_id?: string
+          requester_id?: string
+          status?: Database["public"]["Enums"]["connection_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_connections_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "skill_posts_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_post_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "skill_posts_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_posts: {
         Row: {
           created_at: string | null
@@ -238,6 +379,157 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      skill_posts_v2: {
+        Row: {
+          category: Database["public"]["Enums"]["skill_category"]
+          created_at: string | null
+          current_level: Database["public"]["Enums"]["skill_level"] | null
+          description: string | null
+          id: string
+          image_url: string | null
+          learning_goal: string | null
+          likes: number | null
+          post_type: Database["public"]["Enums"]["skill_post_type"]
+          preferred_mode: Database["public"]["Enums"]["session_mode"]
+          session_duration: number | null
+          skill_level: Database["public"]["Enums"]["skill_level"]
+          skill_title: string
+          updated_at: string | null
+          urgency: Database["public"]["Enums"]["urgency_level"] | null
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["skill_category"]
+          created_at?: string | null
+          current_level?: Database["public"]["Enums"]["skill_level"] | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          learning_goal?: string | null
+          likes?: number | null
+          post_type: Database["public"]["Enums"]["skill_post_type"]
+          preferred_mode?: Database["public"]["Enums"]["session_mode"]
+          session_duration?: number | null
+          skill_level?: Database["public"]["Enums"]["skill_level"]
+          skill_title: string
+          updated_at?: string | null
+          urgency?: Database["public"]["Enums"]["urgency_level"] | null
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["skill_category"]
+          created_at?: string | null
+          current_level?: Database["public"]["Enums"]["skill_level"] | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          learning_goal?: string | null
+          likes?: number | null
+          post_type?: Database["public"]["Enums"]["skill_post_type"]
+          preferred_mode?: Database["public"]["Enums"]["session_mode"]
+          session_duration?: number | null
+          skill_level?: Database["public"]["Enums"]["skill_level"]
+          skill_title?: string
+          updated_at?: string | null
+          urgency?: Database["public"]["Enums"]["urgency_level"] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      skill_reviews: {
+        Row: {
+          created_at: string | null
+          feedback: string | null
+          id: string
+          rating: number
+          reviewee_id: string
+          reviewer_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          rating: number
+          reviewee_id: string
+          reviewer_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          rating?: number
+          reviewee_id?: string
+          reviewer_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_reviews_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "skill_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_sessions: {
+        Row: {
+          connection_id: string
+          created_at: string | null
+          duration: number
+          id: string
+          learner_id: string
+          meeting_link: string | null
+          meeting_platform: Database["public"]["Enums"]["meeting_platform"]
+          notes: string | null
+          scheduled_date: string
+          scheduled_time: string
+          status: Database["public"]["Enums"]["session_status"]
+          teacher_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          connection_id: string
+          created_at?: string | null
+          duration?: number
+          id?: string
+          learner_id: string
+          meeting_link?: string | null
+          meeting_platform?: Database["public"]["Enums"]["meeting_platform"]
+          notes?: string | null
+          scheduled_date: string
+          scheduled_time: string
+          status?: Database["public"]["Enums"]["session_status"]
+          teacher_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          connection_id?: string
+          created_at?: string | null
+          duration?: number
+          id?: string
+          learner_id?: string
+          meeting_link?: string | null
+          meeting_platform?: Database["public"]["Enums"]["meeting_platform"]
+          notes?: string | null
+          scheduled_date?: string
+          scheduled_time?: string
+          status?: Database["public"]["Enums"]["session_status"]
+          teacher_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_sessions_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "skill_connections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_activity: {
         Row: {
@@ -337,6 +629,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_skill_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_skill_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "skill_badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -361,6 +682,22 @@ export type Database = {
     }
     Enums: {
       app_role: "student" | "faculty" | "admin"
+      connection_status: "pending" | "accepted" | "declined" | "completed"
+      meeting_platform: "google_meet" | "zoom" | "in_app"
+      session_mode: "chat" | "voice_call" | "video_meeting"
+      session_status: "scheduled" | "in_progress" | "completed" | "cancelled"
+      skill_category:
+        | "coding"
+        | "design"
+        | "academics"
+        | "languages"
+        | "soft_skills"
+        | "music"
+        | "sports"
+        | "other"
+      skill_level: "beginner" | "intermediate" | "advanced"
+      skill_post_type: "offer" | "request"
+      urgency_level: "low" | "medium" | "high" | "urgent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -489,6 +826,23 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["student", "faculty", "admin"],
+      connection_status: ["pending", "accepted", "declined", "completed"],
+      meeting_platform: ["google_meet", "zoom", "in_app"],
+      session_mode: ["chat", "voice_call", "video_meeting"],
+      session_status: ["scheduled", "in_progress", "completed", "cancelled"],
+      skill_category: [
+        "coding",
+        "design",
+        "academics",
+        "languages",
+        "soft_skills",
+        "music",
+        "sports",
+        "other",
+      ],
+      skill_level: ["beginner", "intermediate", "advanced"],
+      skill_post_type: ["offer", "request"],
+      urgency_level: ["low", "medium", "high", "urgent"],
     },
   },
 } as const
