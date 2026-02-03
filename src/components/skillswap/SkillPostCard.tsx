@@ -3,10 +3,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Clock, Calendar, GraduationCap, BookOpen } from "lucide-react";
+import { Heart, MessageCircle, Clock, Calendar, GraduationCap, BookOpen, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import {
   SkillPost,
   CATEGORY_OPTIONS,
@@ -15,6 +16,7 @@ import {
   URGENCY_OPTIONS,
 } from "@/types/skillswap";
 import { ConnectionDialog } from "./ConnectionDialog";
+import { EditPostDialog } from "./EditPostDialog";
 
 interface SkillPostCardProps {
   post: SkillPost;
@@ -25,6 +27,7 @@ interface SkillPostCardProps {
 export function SkillPostCard({ post, currentUserId, onLikeToggle }: SkillPostCardProps) {
   const [isLiking, setIsLiking] = useState(false);
   const [showConnectionDialog, setShowConnectionDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const category = CATEGORY_OPTIONS.find((c) => c.value === post.category);
   const level = LEVEL_OPTIONS.find((l) => l.value === post.skill_level);
@@ -125,24 +128,41 @@ export function SkillPostCard({ post, currentUserId, onLikeToggle }: SkillPostCa
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </p>
             </div>
-            {!post.image_url && (
-              <Badge
-                variant={post.post_type === "offer" ? "default" : "secondary"}
-                className="gap-1"
-              >
-                {post.post_type === "offer" ? (
-                  <>
-                    <GraduationCap className="w-3 h-3" />
-                    Teaching
-                  </>
-                ) : (
-                  <>
-                    <BookOpen className="w-3 h-3" />
-                    Learning
-                  </>
-                )}
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {!post.image_url && (
+                <Badge
+                  variant={post.post_type === "offer" ? "default" : "secondary"}
+                  className="gap-1"
+                >
+                  {post.post_type === "offer" ? (
+                    <>
+                      <GraduationCap className="w-3 h-3" />
+                      Teaching
+                    </>
+                  ) : (
+                    <>
+                      <BookOpen className="w-3 h-3" />
+                      Learning
+                    </>
+                  )}
+                </Badge>
+              )}
+              {isOwnPost && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Edit Post
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
 
           {/* Title & Category */}
@@ -221,6 +241,13 @@ export function SkillPostCard({ post, currentUserId, onLikeToggle }: SkillPostCa
         onOpenChange={setShowConnectionDialog}
         post={post}
         currentUserId={currentUserId}
+      />
+
+      <EditPostDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        post={post}
+        onSuccess={onLikeToggle}
       />
     </>
   );
