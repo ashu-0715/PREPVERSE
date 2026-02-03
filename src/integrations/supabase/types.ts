@@ -277,6 +277,41 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_chat_messages: {
+        Row: {
+          connection_id: string
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          sender_id: string
+        }
+        Insert: {
+          connection_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          sender_id: string
+        }
+        Update: {
+          connection_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_chat_messages_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "skill_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_connections: {
         Row: {
           connection_type: Database["public"]["Enums"]["session_mode"] | null

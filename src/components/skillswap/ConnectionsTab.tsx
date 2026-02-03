@@ -9,12 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { SkillConnection, ConnectionStatus } from "@/types/skillswap";
+import { SkillChatDialog } from "./SkillChatDialog";
 
 interface ConnectionsTabProps {
   userId: string;
 }
 
 export function ConnectionsTab({ userId }: ConnectionsTabProps) {
+  const [chatConnection, setChatConnection] = useState<SkillConnection | null>(null);
   const [connections, setConnections] = useState<SkillConnection[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -168,7 +170,11 @@ export function ConnectionsTab({ userId }: ConnectionsTabProps) {
                 )}
 
                 {connection.status === "accepted" && (
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setChatConnection(connection)}
+                  >
                     <MessageCircle className="w-4 h-4 mr-1" />
                     Chat
                   </Button>
@@ -223,6 +229,16 @@ export function ConnectionsTab({ userId }: ConnectionsTabProps) {
           ))
         )}
       </TabsContent>
+
+      {/* Chat Dialog */}
+      {chatConnection && (
+        <SkillChatDialog
+          open={!!chatConnection}
+          onOpenChange={(open) => !open && setChatConnection(null)}
+          connection={chatConnection}
+          currentUserId={userId}
+        />
+      )}
     </Tabs>
   );
 }
