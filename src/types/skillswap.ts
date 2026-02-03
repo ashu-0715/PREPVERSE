@@ -120,6 +120,19 @@ export interface UserSkillBadge {
   badge?: SkillBadge;
 }
 
+export interface SkillChatMessage {
+  id: string;
+  connection_id: string;
+  sender_id: string;
+  message: string;
+  created_at: string;
+  is_read: boolean;
+  sender?: {
+    full_name: string;
+    avatar_url: string | null;
+  };
+}
+
 export const CATEGORY_OPTIONS: { value: SkillCategory; label: string; icon: string }[] = [
   { value: 'coding', label: 'Coding', icon: '💻' },
   { value: 'design', label: 'Design', icon: '🎨' },
