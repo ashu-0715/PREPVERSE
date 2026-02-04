@@ -1,4 +1,4 @@
 project_id = "wldmmwntzixpruoxtlxg"
 
-[functions.generate-skill-image]
-verify_jwt = false
+# Note: verify_jwt = false removed from generate-skill-image
+# Authentication is now handled in-code for better control
