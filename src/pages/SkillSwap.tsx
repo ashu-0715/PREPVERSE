@@ -14,6 +14,8 @@ import { SkillPostCard } from "@/components/skillswap/SkillPostCard";
 import { MySessionsTab } from "@/components/skillswap/MySessionsTab";
 import { ConnectionsTab } from "@/components/skillswap/ConnectionsTab";
 import { BadgesSection } from "@/components/skillswap/BadgesSection";
+import { useSkillSwapNotifications } from "@/hooks/useSkillSwapNotifications";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const SkillSwap = () => {
   const navigate = useNavigate();
@@ -32,6 +34,10 @@ const SkillSwap = () => {
     checkAuth();
     fetchPosts();
   }, []);
+
+  // Enable realtime notifications when user is logged in
+  useSkillSwapNotifications({ userId: currentUserId });
+  const { totalUnread } = useUnreadMessages(currentUserId);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -160,9 +166,14 @@ const SkillSwap = () => {
               <Calendar className="w-4 h-4" />
               <span className="hidden sm:inline">Sessions</span>
             </TabsTrigger>
-            <TabsTrigger value="connections" className="gap-2">
+            <TabsTrigger value="connections" className="gap-2 relative">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Connections</span>
+              {totalUnread > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                  {totalUnread > 9 ? '9+' : totalUnread}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="badges" className="gap-2">
               <Trophy className="w-4 h-4" />

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { SkillConnection, ConnectionStatus } from "@/types/skillswap";
 import { SkillChatDialog } from "./SkillChatDialog";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface ConnectionsTabProps {
   userId: string;
@@ -19,6 +20,7 @@ export function ConnectionsTab({ userId }: ConnectionsTabProps) {
   const [chatConnection, setChatConnection] = useState<SkillConnection | null>(null);
   const [connections, setConnections] = useState<SkillConnection[]>([]);
   const [loading, setLoading] = useState(true);
+  const { getUnreadCount, markAsRead, totalUnread } = useUnreadMessages(userId);
 
   useEffect(() => {
     fetchConnections();
@@ -112,6 +114,7 @@ export function ConnectionsTab({ userId }: ConnectionsTabProps) {
       .map((n) => n[0])
       .join("")
       .toUpperCase() || "?";
+    const unreadCount = getUnreadCount(connection.id);
 
     return (
       <Card className="hover:shadow-md transition-shadow">
@@ -174,9 +177,15 @@ export function ConnectionsTab({ userId }: ConnectionsTabProps) {
                     size="sm" 
                     variant="outline"
                     onClick={() => setChatConnection(connection)}
+                    className="relative"
                   >
                     <MessageCircle className="w-4 h-4 mr-1" />
                     Chat
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
                   </Button>
                 )}
               </div>
@@ -237,6 +246,7 @@ export function ConnectionsTab({ userId }: ConnectionsTabProps) {
           onOpenChange={(open) => !open && setChatConnection(null)}
           connection={chatConnection}
           currentUserId={userId}
+          onMessagesRead={() => markAsRead(chatConnection.id)}
         />
       )}
     </Tabs>

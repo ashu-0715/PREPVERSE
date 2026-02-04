@@ -312,6 +312,38 @@ export type Database = {
           },
         ]
       }
+      skill_chat_typing: {
+        Row: {
+          connection_id: string
+          id: string
+          is_typing: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connection_id: string
+          id?: string
+          is_typing?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connection_id?: string
+          id?: string
+          is_typing?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_chat_typing_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "skill_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_connections: {
         Row: {
           connection_type: Database["public"]["Enums"]["session_mode"] | null
