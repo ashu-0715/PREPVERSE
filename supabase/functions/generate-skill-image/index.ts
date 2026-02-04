@@ -1,30 +1,147 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+// Allowed origins for CORS - restrict to known domains
+const allowedOrigins = [
+  "https://prepverse-for-students.lovable.app",
+  "https://id-preview--03d1bf87-504b-46dd-bebe-c3667b1313d0.lovable.app",
+  "https://03d1bf87-504b-46dd-bebe-c3667b1313d0.lovableproject.com",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  // Allow all lovable origins dynamically
+  const isAllowedOrigin = allowedOrigins.includes(origin) || 
+    origin.endsWith('.lovable.app') || 
+    origin.endsWith('.lovableproject.com');
+  const allowedOrigin = isAllowedOrigin ? origin : allowedOrigins[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+}
+
+// Simple in-memory rate limiting (per user)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const MAX_IMAGES_PER_WINDOW = 5; // 5 images per hour per user
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+  
+  if (!userLimit || now > userLimit.resetTime) {
+    rateLimitMap.set(userId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  
+  if (userLimit.count >= MAX_IMAGES_PER_WINDOW) {
+    return false;
+  }
+  
+  userLimit.count++;
+  return true;
+}
+
+// Sanitize user input to prevent prompt injection
+function sanitizeInput(str: string): string {
+  if (!str) return "";
+  // Remove special characters that could be used for prompt injection
+  return str.replace(/[<>{}[\]\\]/g, '').trim();
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Create client with user's token for auth verification
+    const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: authData, error: authError } = await userSupabase.auth.getUser();
+    
+    if (authError || !authData?.user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = authData.user.id;
+
+    // Check rate limit
+    if (!checkRateLimit(userId)) {
+      console.warn(`Rate limit exceeded for user: ${userId}`);
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. You can generate up to 5 images per hour." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { skillTitle, category, description, postType } = await req.json();
+
+    // Input validation
+    if (!skillTitle || typeof skillTitle !== "string" || skillTitle.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Invalid skill title - must be 1-100 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!category || typeof category !== "string" || category.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Invalid category - must be 1-50 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (description && (typeof description !== "string" || description.length > 500)) {
+      return new Response(
+        JSON.stringify({ error: "Description too long - max 500 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Sanitize inputs
+    const safeSkillTitle = sanitizeInput(skillTitle);
+    const safeCategory = sanitizeInput(category);
+    const safeDescription = sanitizeInput(description || "");
+    const safePostType = postType === "offer" ? "teaching" : "learning";
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Create a prompt for image generation
+    // Create a prompt for image generation with sanitized inputs
     const prompt = `Create a modern, clean, educational illustration for a skill-sharing platform. 
-    The image should represent ${postType === 'offer' ? 'teaching' : 'learning'} the skill: "${skillTitle}" in the category of "${category}". 
-    ${description ? `Context: ${description}` : ''}
+    The image should represent ${safePostType} the skill: "${safeSkillTitle}" in the category of "${safeCategory}". 
+    ${safeDescription ? `Context: ${safeDescription}` : ''}
     Style: Flat design, vibrant colors, no text, professional look suitable for an educational app.
-    Include relevant icons or symbols that represent ${skillTitle} and ${category}.`;
+    Include relevant icons or symbols that represent ${safeSkillTitle} and ${safeCategory}.`;
+
+    console.log(`Image generation requested by user: ${userId} for skill: ${safeSkillTitle}`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -70,7 +187,6 @@ serve(async (req) => {
     }
 
     // Upload the base64 image to Supabase storage
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!supabaseUrl || !supabaseServiceKey) {
@@ -119,7 +235,7 @@ serve(async (req) => {
       JSON.stringify({ error: error instanceof Error ? error.message : "Failed to generate image" }),
       {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       }
     );
   }
