@@ -53,8 +53,8 @@ const ForgotPassword = () => {
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (code.length !== 4) {
-      toast.error("Please enter the 4-digit code");
+    if (code.length !== 6) {
+      toast.error("Please enter the 6-character code");
       return;
     }
 
@@ -116,7 +116,7 @@ const ForgotPassword = () => {
             </div>
             <h2 className="text-2xl font-semibold text-center mb-2">Forgot Password?</h2>
             <p className="text-muted-foreground text-center mb-6">
-              Enter your email and we'll send you a 4-digit code
+              Enter your email and we'll send you a 6-character code
             </p>
             <form onSubmit={handleSendCode} className="space-y-4">
               <div>
@@ -145,24 +145,26 @@ const ForgotPassword = () => {
             </div>
             <h2 className="text-2xl font-semibold text-center mb-2">Enter Code</h2>
             <p className="text-muted-foreground text-center mb-6">
-              We sent a 4-digit code to {email}
+              We sent a 6-character code to {email}
             </p>
             <form onSubmit={handleVerifyCode} className="space-y-6">
               <div className="flex justify-center">
                 <InputOTP
-                  maxLength={4}
+                  maxLength={6}
                   value={code}
-                  onChange={(value) => setCode(value)}
+                  onChange={(value) => setCode(value.toUpperCase())}
                 >
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
                     <InputOTPSlot index={2} />
                     <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
                   </InputOTPGroup>
                 </InputOTP>
               </div>
-              <Button type="submit" className="w-full" disabled={code.length !== 4}>
+              <Button type="submit" className="w-full" disabled={code.length !== 6}>
                 Verify Code
               </Button>
             </form>
