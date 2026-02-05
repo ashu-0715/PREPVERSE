@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { GraduationCap, User, BookOpen, Shield } from "lucide-react";
+import { GraduationCap, BookOpen, Shield } from "lucide-react";
 
 type LoginType = "student" | "faculty" | "admin";
 
@@ -128,18 +128,6 @@ const Auth = () => {
               >
                 <BookOpen className="w-5 h-5" />
                 <span className="font-medium text-sm">Student</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setLoginType("faculty")}
-                className={`flex-1 p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
-                  loginType === "faculty"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <User className="w-5 h-5" />
-                <span className="font-medium text-sm">Faculty</span>
               </button>
               <button
                 type="button"
