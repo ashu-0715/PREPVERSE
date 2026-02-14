@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Lightbulb } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lightbulb, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import avanthikaImg from "@/assets/founders/avanthika.jpeg";
@@ -13,18 +13,21 @@ const founders = [
     role: "Founder",
     image: avanthikaImg,
     quote: "Empowering students to discover their true potential through technology.",
+    linkedin: "https://www.linkedin.com/in/avanthika-j-53a45a33a",
   },
   {
     name: "ASWINI E",
     role: "Founder",
     image: aswiniImg,
     quote: "Creating a community where knowledge sharing transforms lives.",
+    linkedin: "https://www.linkedin.com/in/aswiniprofileurl",
   },
   {
     name: "BHAVISHYA L",
     role: "Founder",
     image: bhavishyaImg,
     quote: "Building bridges between learning and career success.",
+    linkedin: "https://www.linkedin.com/in/bhavishya-l-a2ab14331",
   },
 ];
 
@@ -89,6 +92,10 @@ const FoundersSection = () => {
                 <h3 className="text-xl font-bold mb-1">{founder.name}</h3>
                 <p className="text-sm text-primary font-medium mb-3">{founder.role}</p>
                 <p className="text-muted-foreground italic text-sm">"{founder.quote}"</p>
+                <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-primary hover:text-primary/80 transition-colors text-sm font-medium">
+                  <Linkedin className="w-4 h-4" />
+                  LinkedIn
+                </a>
               </div>
             </Card>
           ))}
@@ -118,6 +125,10 @@ const FoundersSection = () => {
                           <h3 className="text-lg font-bold mb-1">{founder.name}</h3>
                           <p className="text-sm text-primary font-medium mb-3">{founder.role}</p>
                           <p className="text-muted-foreground italic text-sm">"{founder.quote}"</p>
+                          <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-primary hover:text-primary/80 transition-colors text-sm font-medium">
+                            <Linkedin className="w-4 h-4" />
+                            LinkedIn
+                          </a>
                         </div>
                       </Card>
                     </div>
