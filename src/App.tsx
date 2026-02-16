@@ -12,6 +12,7 @@ import Admin from "./pages/Admin";
 import Dashboard from "./pages/Dashboard";
 import Career from "./pages/Career";
 import Notes from "./pages/Notes";
+import Premium from "./pages/Premium";
 import SkillSwap from "./pages/SkillSwap";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/career" element={<Career />} />
             <Route path="/notes" element={<Notes />} />
+            <Route path="/premium" element={<Premium />} />
             <Route path="/skillswap" element={<SkillSwap />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

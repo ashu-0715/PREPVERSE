@@ -68,6 +68,38 @@ export type Database = {
         }
         Relationships: []
       }
+      note_purchases: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          note_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          note_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          note_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_purchases_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_requests: {
         Row: {
           created_at: string | null
@@ -101,11 +133,51 @@ export type Database = {
         }
         Relationships: []
       }
+      note_reviews: {
+        Row: {
+          created_at: string | null
+          id: string
+          note_id: string
+          review_text: string | null
+          stars: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          note_id: string
+          review_text?: string | null
+          stars: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          note_id?: string
+          review_text?: string | null
+          stars?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_reviews_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           created_at: string | null
           file_url: string
           id: string
+          note_type: string | null
+          price: number | null
           rating: number | null
           rating_count: number | null
           semester: string | null
@@ -117,6 +189,8 @@ export type Database = {
           created_at?: string | null
           file_url: string
           id?: string
+          note_type?: string | null
+          price?: number | null
           rating?: number | null
           rating_count?: number | null
           semester?: string | null
@@ -128,6 +202,8 @@ export type Database = {
           created_at?: string | null
           file_url?: string
           id?: string
+          note_type?: string | null
+          price?: number | null
           rating?: number | null
           rating_count?: number | null
           semester?: string | null
@@ -167,6 +243,47 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          note_id: string | null
+          payment_method: string | null
+          payment_type: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          note_id?: string | null
+          payment_method?: string | null
+          payment_type?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          note_id?: string | null
+          payment_method?: string | null
+          payment_type?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -176,6 +293,8 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_premium: boolean | null
+          premium_activated_at: string | null
           skills: string[] | null
           streak_days: number | null
           updated_at: string | null
@@ -189,6 +308,8 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_premium?: boolean | null
+          premium_activated_at?: string | null
           skills?: string[] | null
           streak_days?: number | null
           updated_at?: string | null
@@ -202,6 +323,8 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_premium?: boolean | null
+          premium_activated_at?: string | null
           skills?: string[] | null
           streak_days?: number | null
           updated_at?: string | null
