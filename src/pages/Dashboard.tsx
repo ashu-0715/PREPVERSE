@@ -18,6 +18,7 @@ import {
   Target,
   MapPin,
   GraduationCap,
+  Crown,
 } from "lucide-react";
 
 interface Profile {
@@ -166,6 +167,11 @@ const Dashboard = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-3 flex-wrap">
                   <h2 className="text-2xl font-bold">{profile?.full_name}</h2>
+                  {(profile as any)?.is_premium && (
+                    <Badge className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white border-0 gap-1">
+                      <Crown className="w-3 h-3" /> Premium
+                    </Badge>
+                  )}
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🔥</span>
                     <span className="font-semibold text-orange-500">
@@ -209,14 +215,27 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Edit Button and Badges */}
+            {/* Edit Button, Premium, and Badges */}
             <div className="flex flex-col items-end gap-4 ml-auto">
-              {profile && (
-                <EditProfileDialog
-                  profile={profile}
-                  onProfileUpdate={setProfile}
-                />
-              )}
+              <div className="flex gap-2">
+                {profile && (
+                  <EditProfileDialog
+                    profile={profile}
+                    onProfileUpdate={setProfile}
+                  />
+                )}
+                {!(profile as any)?.is_premium && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate("/premium")}
+                    className="border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/10"
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    Go Premium
+                  </Button>
+                )}
+              </div>
               <div className="flex gap-2">
                 {badges.slice(0, 3).map((badge) => (
                   <div
