@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Crown, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, Crown, Check, Sparkles, Clock } from "lucide-react";
 import paymentQR from "@/assets/payment-qr.png";
 
 const Premium = () => {
