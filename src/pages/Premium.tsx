@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Crown, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, Crown, Check, Sparkles, Clock } from "lucide-react";
 import paymentQR from "@/assets/payment-qr.png";
 
 const Premium = () => {
@@ -37,39 +37,59 @@ const Premium = () => {
     setLoading(false);
   };
 
+  const [paymentPending, setPaymentPending] = useState(false);
+
+  useEffect(() => {
+    if (user) checkPendingPayment();
+  }, [user]);
+
+  const checkPendingPayment = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("payments")
+      .select("id, status")
+      .eq("user_id", user.id)
+      .eq("payment_type", "premium")
+      .eq("status", "pending")
+      .maybeSingle();
+    setPaymentPending(!!data);
+  };
+
   const handleVerifyPayment = async () => {
     if (!user) return;
     setVerifying(true);
 
     try {
-      // Record payment
+      // Check if already has a pending payment
+      const { data: existing } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("payment_type", "premium")
+        .eq("status", "pending")
+        .maybeSingle();
+
+      if (existing) {
+        toast.info("Your payment is already pending admin approval");
+        setPaymentPending(true);
+        setVerifying(false);
+        return;
+      }
+
+      // Record payment as pending (admin will approve)
       const { error: paymentError } = await supabase.from("payments").insert({
         user_id: user.id,
         amount: 199,
-        status: "completed",
+        status: "pending",
         payment_method: "qr",
         payment_type: "premium",
       });
       if (paymentError) throw paymentError;
 
-      // Upgrade profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          is_premium: true,
-          premium_activated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
-      if (profileError) throw profileError;
-
-      setShowSuccess(true);
-      setIsPremium(true);
-
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 3000);
+      setPaymentPending(true);
+      toast.success("Payment submitted! Awaiting admin approval.");
     } catch (error: any) {
-      toast.error(error.message || "Verification failed");
+      toast.error(error.message || "Submission failed");
     } finally {
       setVerifying(false);
     }
@@ -186,14 +206,22 @@ const Premium = () => {
               Scan with any UPI app (GPay, PhonePe, Paytm)
             </p>
 
-            <Button
-              onClick={handleVerifyPayment}
-              disabled={verifying}
-              className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-semibold py-3"
-              size="lg"
-            >
-              {verifying ? "Verifying..." : "I've Paid / Verify Payment"}
-            </Button>
+            {paymentPending ? (
+              <div className="text-center p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                <Clock className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
+                <p className="font-semibold text-yellow-600 dark:text-yellow-400">Payment Pending Approval</p>
+                <p className="text-sm text-muted-foreground mt-1">An admin will verify your payment shortly.</p>
+              </div>
+            ) : (
+              <Button
+                onClick={handleVerifyPayment}
+                disabled={verifying}
+                className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-semibold py-3"
+                size="lg"
+              >
+                {verifying ? "Submitting..." : "I've Paid — Submit for Verification"}
+              </Button>
+            )}
           </div>
         </Card>
       </main>

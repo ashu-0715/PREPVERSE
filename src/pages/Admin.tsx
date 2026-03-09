@@ -7,26 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
-  Shield,
-  Users,
-  FileText,
-  Activity,
-  LogOut,
-  Search,
-  RefreshCw,
-  Clock,
-  User,
-  BookOpen,
+  Shield, Users, FileText, Activity, LogOut, Search, RefreshCw, Clock,
+  User, BookOpen, Crown, Trash2, CheckCircle, XCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -44,11 +35,21 @@ interface AdminUser {
   isActive: boolean;
 }
 
+interface PendingPayment {
+  id: string;
+  user_id: string;
+  userName: string;
+  userEmail: string;
+  amount: number;
+  created_at: string;
+}
+
 interface AdminData {
   users: AdminUser[];
   totalUsers: number;
   totalNotes: number;
   activeUsers: number;
+  pendingPayments: PendingPayment[];
 }
 
 const Admin = () => {
@@ -56,6 +57,7 @@ const Admin = () => {
   const [data, setData] = useState<AdminData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,24 +67,16 @@ const Admin = () => {
   const checkAdminAndFetchData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
+      if (!user) { navigate("/auth"); return; }
 
       const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
+        .from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
 
       if (roleData?.role !== "admin") {
         toast.error("Access denied");
         navigate("/auth");
         return;
       }
-
       await fetchAdminData();
     } catch (error) {
       console.error("Error:", error);
@@ -94,19 +88,12 @@ const Admin = () => {
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error("No session");
-      }
+      if (!session) throw new Error("No session");
 
       const { data, error } = await supabase.functions.invoke("admin-data", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
-
       if (error) throw error;
-
       setData(data);
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch data");
@@ -115,12 +102,30 @@ const Admin = () => {
     }
   };
 
+  const adminAction = async (action: string, payload: Record<string, string>) => {
+    setActionLoading(payload.payment_id || payload.note_id || payload.user_id || action);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
+      const { data: result, error } = await supabase.functions.invoke("admin-data", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { action, ...payload },
+      });
+      if (error) throw error;
+      toast.success("Action completed!");
+      await fetchAdminData();
+    } catch (error: any) {
+      toast.error(error.message || "Action failed");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleLogout = async () => {
-    // Mark admin sessions as inactive before logout
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await supabase
-        .from("user_sessions")
+      await supabase.from("user_sessions")
         .update({ is_active: false, last_active_at: new Date().toISOString() })
         .eq("user_id", user.id);
     }
@@ -143,7 +148,6 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -153,46 +157,38 @@ const Admin = () => {
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <Button variant="outline" size="sm" onClick={fetchAdminData}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
+              <RefreshCw className="w-4 h-4 mr-2" />Refresh
             </Button>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
+              <LogOut className="w-4 h-4 mr-2" />Logout
             </Button>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <Users className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data?.totalUsers || 0}</div>
-            </CardContent>
+            <CardContent><div className="text-2xl font-bold">{data?.totalUsers || 0}</div></CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Active Now</CardTitle>
               <Activity className="w-4 h-4 text-green-500" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-500">{data?.activeUsers || 0}</div>
-            </CardContent>
+            <CardContent><div className="text-2xl font-bold text-green-500">{data?.activeUsers || 0}</div></CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Notes</CardTitle>
               <FileText className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data?.totalNotes || 0}</div>
-            </CardContent>
+            <CardContent><div className="text-2xl font-bold">{data?.totalNotes || 0}</div></CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -200,9 +196,16 @@ const Admin = () => {
               <BookOpen className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {data?.users.filter(u => u.role === "student").length || 0}
-              </div>
+              <div className="text-2xl font-bold">{data?.users.filter(u => u.role === "student").length || 0}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-yellow-500/30">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
+              <Crown className="w-4 h-4 text-yellow-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-500">{data?.pendingPayments?.length || 0}</div>
             </CardContent>
           </Card>
         </div>
@@ -210,10 +213,19 @@ const Admin = () => {
         <Tabs defaultValue="users" className="space-y-4">
           <TabsList>
             <TabsTrigger value="users">All Users</TabsTrigger>
-            <TabsTrigger value="notes">Notes Uploaded</TabsTrigger>
-            <TabsTrigger value="activity">Activity Log</TabsTrigger>
+            <TabsTrigger value="payments" className="gap-1">
+              Premium Approvals
+              {(data?.pendingPayments?.length || 0) > 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {data?.pendingPayments?.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
+          {/* Users Tab */}
           <TabsContent value="users">
             <Card>
               <CardHeader>
@@ -221,12 +233,7 @@ const Admin = () => {
                   <CardTitle>User Management</CardTitle>
                   <div className="relative w-64">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input
-                      placeholder="Search users..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
-                    />
+                    <Input placeholder="Search users..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
                   </div>
                 </div>
               </CardHeader>
@@ -238,19 +245,15 @@ const Admin = () => {
                       <TableHead>Role</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Notes</TableHead>
-                      <TableHead>Last Sign In</TableHead>
                       <TableHead>Joined</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredUsers.map((user) => (
-                      <TableRow
-                        key={user.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => setSelectedUser(user)}
-                      >
+                      <TableRow key={user.id}>
                         <TableCell>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedUser(user)}>
                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                               <User className="w-4 h-4 text-primary" />
                             </div>
@@ -261,9 +264,7 @@ const Admin = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={user.role === "admin" ? "default" : user.role === "faculty" ? "secondary" : "outline"}>
-                            {user.role}
-                          </Badge>
+                          <Badge variant={user.role === "admin" ? "default" : "outline"}>{user.role}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -272,11 +273,34 @@ const Admin = () => {
                           </div>
                         </TableCell>
                         <TableCell>{user.notesCount}</TableCell>
+                        <TableCell>{format(new Date(user.createdAt), "MMM d, yyyy")}</TableCell>
                         <TableCell>
-                          {user.lastSignIn ? format(new Date(user.lastSignIn), "MMM d, h:mm a") : "Never"}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(user.createdAt), "MMM d, yyyy")}
+                          {user.role !== "admin" && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Permanently delete {user.fullName} ({user.email})? This removes all their data.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => adminAction("delete_user", { user_id: user.id })}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -286,11 +310,73 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="notes">
+          {/* Premium Approvals Tab */}
+          <TabsContent value="payments">
             <Card>
               <CardHeader>
-                <CardTitle>Notes Uploaded by Users</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Crown className="w-5 h-5 text-yellow-500" />
+                  Premium Payment Approvals
+                </CardTitle>
               </CardHeader>
+              <CardContent>
+                {(!data?.pendingPayments || data.pendingPayments.length === 0) ? (
+                  <p className="text-center text-muted-foreground py-8">No pending premium payments</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.pendingPayments.map((payment) => (
+                        <TableRow key={payment.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{payment.userName}</p>
+                              <p className="text-sm text-muted-foreground">{payment.userEmail}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-semibold">₹{payment.amount}</TableCell>
+                          <TableCell>{format(new Date(payment.created_at), "MMM d, h:mm a")}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white gap-1"
+                                onClick={() => adminAction("approve_payment", { payment_id: payment.id, user_id: payment.user_id })}
+                                disabled={actionLoading === payment.id}
+                              >
+                                <CheckCircle className="w-4 h-4" /> Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="gap-1"
+                                onClick={() => adminAction("reject_payment", { payment_id: payment.id })}
+                                disabled={actionLoading === payment.id}
+                              >
+                                <XCircle className="w-4 h-4" /> Reject
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Notes Tab */}
+          <TabsContent value="notes">
+            <Card>
+              <CardHeader><CardTitle>Notes Management</CardTitle></CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
@@ -298,17 +384,14 @@ const Admin = () => {
                       <TableHead>Title</TableHead>
                       <TableHead>Subject</TableHead>
                       <TableHead>Uploaded By</TableHead>
-                      <TableHead>Semester</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Date</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {data?.users.flatMap(user =>
-                      user.notes.map(note => ({
-                        ...note,
-                        uploaderName: user.fullName,
-                        uploaderEmail: user.email,
-                      }))
+                      user.notes.map(note => ({ ...note, uploaderName: user.fullName, uploaderEmail: user.email }))
                     ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                     .map((note) => (
                       <TableRow key={note.id}>
@@ -320,9 +403,37 @@ const Admin = () => {
                             <p className="text-sm text-muted-foreground">{note.uploaderEmail}</p>
                           </div>
                         </TableCell>
-                        <TableCell>{note.semester || "-"}</TableCell>
                         <TableCell>
-                          {format(new Date(note.created_at), "MMM d, yyyy")}
+                          <Badge variant={note.note_type === "premium" ? "default" : "outline"}>
+                            {note.note_type || "free"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{format(new Date(note.created_at), "MMM d, yyyy")}</TableCell>
+                        <TableCell>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Note</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Delete "{note.title}" by {note.uploaderName}? This cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => adminAction("delete_note", { note_id: note.id })}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -332,19 +443,14 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
+          {/* Activity Tab */}
           <TabsContent value="activity">
             <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Recent Activity</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {data?.users.flatMap(user =>
-                    user.activity.map(act => ({
-                      ...act,
-                      userName: user.fullName,
-                      userEmail: user.email,
-                    }))
+                    user.activity.map(act => ({ ...act, userName: user.fullName }))
                   ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                   .slice(0, 50)
                   .map((activity) => (
@@ -354,13 +460,9 @@ const Admin = () => {
                       </div>
                       <div className="flex-1">
                         <p className="font-medium">{activity.userName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {activity.action.replace(/_/g, " ")}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{activity.action.replace(/_/g, " ")}</p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(activity.created_at), "MMM d, h:mm a")}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{format(new Date(activity.created_at), "MMM d, h:mm a")}</p>
                     </div>
                   ))}
                   {(!data?.users.some(u => u.activity.length > 0)) && (
@@ -381,9 +483,7 @@ const Admin = () => {
                   <CardTitle>{selectedUser.fullName}</CardTitle>
                   <p className="text-muted-foreground">{selectedUser.email}</p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>
-                  ✕
-                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>✕</Button>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -407,31 +507,31 @@ const Admin = () => {
                     <p className="font-medium">{format(new Date(selectedUser.createdAt), "MMM d, yyyy")}</p>
                   </div>
                 </div>
-
                 {selectedUser.notes.length > 0 && (
                   <div>
                     <h4 className="font-medium mb-2">Uploaded Notes</h4>
                     <div className="space-y-2">
                       {selectedUser.notes.map(note => (
-                        <div key={note.id} className="p-3 bg-muted rounded-lg">
-                          <p className="font-medium">{note.title}</p>
-                          <p className="text-sm text-muted-foreground">{note.subject} • {note.semester || "No semester"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selectedUser.activity.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Recent Activity</h4>
-                    <div className="space-y-2">
-                      {selectedUser.activity.slice(0, 5).map(act => (
-                        <div key={act.id} className="flex items-center justify-between p-2 bg-muted rounded">
-                          <p className="text-sm">{act.action.replace(/_/g, " ")}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(act.created_at), "MMM d, h:mm a")}
-                          </p>
+                        <div key={note.id} className="p-3 bg-muted rounded-lg flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{note.title}</p>
+                            <p className="text-sm text-muted-foreground">{note.subject}</p>
+                          </div>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Note</AlertDialogTitle>
+                                <AlertDialogDescription>Delete "{note.title}"?</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => { adminAction("delete_note", { note_id: note.id }); setSelectedUser(null); }} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       ))}
                     </div>

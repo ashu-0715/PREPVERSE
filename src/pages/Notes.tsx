@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { NoteReviewDialog } from "@/components/NoteReviewDialog";
+import { motion } from "framer-motion";
 
 interface Note {
   id: string;
@@ -514,14 +515,35 @@ const Notes = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredNotes.map((note) => (
-                  <Card key={note.id} className={`p-6 hover:shadow-elegant transition-all group relative ${note.note_type === "premium" ? "border-yellow-500/30" : ""}`}>
+                  <Card key={note.id} className={`p-6 hover:shadow-elegant transition-all group relative overflow-hidden ${note.note_type === "premium" ? "border-yellow-500/30" : ""}`}>
+                    {/* Crown animation for premium */}
+                    {note.note_type === "premium" && (
+                      <motion.div
+                        className="absolute -top-1 -right-1 z-10"
+                        animate={{ rotate: [0, -10, 10, -5, 0], scale: [1, 1.1, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                      >
+                        <div className="bg-gradient-to-br from-yellow-400 to-amber-600 p-2 rounded-bl-xl shadow-lg">
+                          <Crown className="w-5 h-5 text-white" />
+                        </div>
+                      </motion.div>
+                    )}
                     {/* Type badge */}
-                    <div className="absolute top-3 right-3">{getNoteTypeBadge(note)}</div>
+                    <div className="absolute top-3 right-3">{note.note_type !== "premium" && getNoteTypeBadge(note)}</div>
+                    {note.note_type === "premium" && (
+                      <motion.div
+                        className="absolute top-14 right-3"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        {getNoteTypeBadge(note)}
+                      </motion.div>
+                    )}
 
                     <div className="flex items-start justify-between mb-4 pr-20">
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors flex items-center gap-2">
-                          {note.note_type === "premium" && <Crown className="w-4 h-4 text-yellow-500 flex-shrink-0" />}
                           {note.title}
                         </h3>
                         <p className="text-sm text-muted-foreground">{note.subject}</p>
