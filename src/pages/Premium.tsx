@@ -37,39 +37,59 @@ const Premium = () => {
     setLoading(false);
   };
 
+  const [paymentPending, setPaymentPending] = useState(false);
+
+  useEffect(() => {
+    if (user) checkPendingPayment();
+  }, [user]);
+
+  const checkPendingPayment = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("payments")
+      .select("id, status")
+      .eq("user_id", user.id)
+      .eq("payment_type", "premium")
+      .eq("status", "pending")
+      .maybeSingle();
+    setPaymentPending(!!data);
+  };
+
   const handleVerifyPayment = async () => {
     if (!user) return;
     setVerifying(true);
 
     try {
-      // Record payment
+      // Check if already has a pending payment
+      const { data: existing } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("payment_type", "premium")
+        .eq("status", "pending")
+        .maybeSingle();
+
+      if (existing) {
+        toast.info("Your payment is already pending admin approval");
+        setPaymentPending(true);
+        setVerifying(false);
+        return;
+      }
+
+      // Record payment as pending (admin will approve)
       const { error: paymentError } = await supabase.from("payments").insert({
         user_id: user.id,
         amount: 199,
-        status: "completed",
+        status: "pending",
         payment_method: "qr",
         payment_type: "premium",
       });
       if (paymentError) throw paymentError;
 
-      // Upgrade profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          is_premium: true,
-          premium_activated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
-      if (profileError) throw profileError;
-
-      setShowSuccess(true);
-      setIsPremium(true);
-
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 3000);
+      setPaymentPending(true);
+      toast.success("Payment submitted! Awaiting admin approval.");
     } catch (error: any) {
-      toast.error(error.message || "Verification failed");
+      toast.error(error.message || "Submission failed");
     } finally {
       setVerifying(false);
     }
