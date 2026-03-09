@@ -206,14 +206,22 @@ const Premium = () => {
               Scan with any UPI app (GPay, PhonePe, Paytm)
             </p>
 
-            <Button
-              onClick={handleVerifyPayment}
-              disabled={verifying}
-              className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-semibold py-3"
-              size="lg"
-            >
-              {verifying ? "Verifying..." : "I've Paid / Verify Payment"}
-            </Button>
+            {paymentPending ? (
+              <div className="text-center p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                <Clock className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
+                <p className="font-semibold text-yellow-600 dark:text-yellow-400">Payment Pending Approval</p>
+                <p className="text-sm text-muted-foreground mt-1">An admin will verify your payment shortly.</p>
+              </div>
+            ) : (
+              <Button
+                onClick={handleVerifyPayment}
+                disabled={verifying}
+                className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-semibold py-3"
+                size="lg"
+              >
+                {verifying ? "Submitting..." : "I've Paid — Submit for Verification"}
+              </Button>
+            )}
           </div>
         </Card>
       </main>
