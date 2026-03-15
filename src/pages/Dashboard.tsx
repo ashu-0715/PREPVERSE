@@ -19,6 +19,7 @@ import {
   MapPin,
   GraduationCap,
   Crown,
+  Gamepad2,
 } from "lucide-react";
 
 interface Profile {
