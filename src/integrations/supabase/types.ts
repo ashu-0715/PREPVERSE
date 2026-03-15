@@ -68,6 +68,277 @@ export type Database = {
         }
         Relationships: []
       }
+      game_answers: {
+        Row: {
+          answer: string
+          created_at: string | null
+          id: string
+          is_correct: boolean
+          player_id: string
+          points_earned: number | null
+          question_id: string
+          room_id: string
+          time_taken_ms: number | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string | null
+          id?: string
+          is_correct: boolean
+          player_id: string
+          points_earned?: number | null
+          question_id: string
+          room_id: string
+          time_taken_ms?: number | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string | null
+          id?: string
+          is_correct?: boolean
+          player_id?: string
+          points_earned?: number | null
+          question_id?: string
+          room_id?: string
+          time_taken_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_answers_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "game_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "game_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_answers_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "game_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_badges: {
+        Row: {
+          created_at: string | null
+          criteria: Json | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          criteria?: Json | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          criteria?: Json | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      game_players: {
+        Row: {
+          avatar_url: string | null
+          correct_answers: number | null
+          display_name: string
+          id: string
+          is_ready: boolean | null
+          joined_at: string | null
+          room_id: string
+          score: number | null
+          streak: number | null
+          total_answered: number | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          correct_answers?: number | null
+          display_name: string
+          id?: string
+          is_ready?: boolean | null
+          joined_at?: string | null
+          room_id: string
+          score?: number | null
+          streak?: number | null
+          total_answered?: number | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          correct_answers?: number | null
+          display_name?: string
+          id?: string
+          is_ready?: boolean | null
+          joined_at?: string | null
+          room_id?: string
+          score?: number | null
+          streak?: number | null
+          total_answered?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "game_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_question_sets: {
+        Row: {
+          created_at: string | null
+          difficulty: string | null
+          id: string
+          source_file_name: string | null
+          source_file_url: string | null
+          title: string
+          topics: string[] | null
+          total_questions: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          difficulty?: string | null
+          id?: string
+          source_file_name?: string | null
+          source_file_url?: string | null
+          title: string
+          topics?: string[] | null
+          total_questions?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          difficulty?: string | null
+          id?: string
+          source_file_name?: string | null
+          source_file_url?: string | null
+          title?: string
+          topics?: string[] | null
+          total_questions?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      game_questions: {
+        Row: {
+          correct_answer: string
+          created_at: string | null
+          difficulty: string | null
+          explanation: string | null
+          id: string
+          options: Json
+          question_set_id: string
+          question_text: string
+          question_type: string
+          topic: string | null
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string | null
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          options?: Json
+          question_set_id: string
+          question_text: string
+          question_type?: string
+          topic?: string | null
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string | null
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          options?: Json
+          question_set_id?: string
+          question_text?: string
+          question_type?: string
+          topic?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_questions_question_set_id_fkey"
+            columns: ["question_set_id"]
+            isOneToOne: false
+            referencedRelation: "game_question_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_rooms: {
+        Row: {
+          created_at: string | null
+          current_question_index: number | null
+          ended_at: string | null
+          host_id: string
+          id: string
+          max_players: number | null
+          question_set_id: string
+          question_timer: number | null
+          room_code: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_question_index?: number | null
+          ended_at?: string | null
+          host_id: string
+          id?: string
+          max_players?: number | null
+          question_set_id: string
+          question_timer?: number | null
+          room_code: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          current_question_index?: number | null
+          ended_at?: string | null
+          host_id?: string
+          id?: string
+          max_players?: number | null
+          question_set_id?: string
+          question_timer?: number | null
+          room_code?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_rooms_question_set_id_fkey"
+            columns: ["question_set_id"]
+            isOneToOne: false
+            referencedRelation: "game_question_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_purchases: {
         Row: {
           amount: number
@@ -773,6 +1044,80 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_game_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_game_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "game_badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_game_stats: {
+        Row: {
+          battles_won: number | null
+          created_at: string | null
+          games_played: number | null
+          id: string
+          level: number | null
+          longest_streak: number | null
+          materials_uploaded: number | null
+          total_answered: number | null
+          total_correct: number | null
+          total_xp: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          battles_won?: number | null
+          created_at?: string | null
+          games_played?: number | null
+          id?: string
+          level?: number | null
+          longest_streak?: number | null
+          materials_uploaded?: number | null
+          total_answered?: number | null
+          total_correct?: number | null
+          total_xp?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          battles_won?: number | null
+          created_at?: string | null
+          games_played?: number | null
+          id?: string
+          level?: number | null
+          longest_streak?: number | null
+          materials_uploaded?: number | null
+          total_answered?: number | null
+          total_correct?: number | null
+          total_xp?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
