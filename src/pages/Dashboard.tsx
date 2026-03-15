@@ -125,6 +125,13 @@ const Dashboard = () => {
       path: "/exam",
       color: "bg-gradient-to-br from-indigo-500 to-purple-500",
     },
+    {
+      title: "Game Zone",
+      description: "Gamified revision with quiz battles",
+      icon: Gamepad2,
+      path: "/gamezone",
+      color: "bg-gradient-to-br from-pink-500 to-rose-500",
+    },
   ];
 
   return (
