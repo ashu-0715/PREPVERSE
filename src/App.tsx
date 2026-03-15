@@ -15,6 +15,7 @@ import Notes from "./pages/Notes";
 import Premium from "./pages/Premium";
 import SkillSwap from "./pages/SkillSwap";
 import NotFound from "./pages/NotFound";
+import GameZone from "./pages/GameZone";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/notes" element={<Notes />} />
             <Route path="/premium" element={<Premium />} />
             <Route path="/skillswap" element={<SkillSwap />} />
+            <Route path="/gamezone" element={<GameZone />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
