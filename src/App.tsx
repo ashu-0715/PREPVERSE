@@ -15,6 +15,7 @@ import Notes from "./pages/Notes";
 import Premium from "./pages/Premium";
 import SkillSwap from "./pages/SkillSwap";
 import NotFound from "./pages/NotFound";
+import GameZone from "./pages/GameZone";
 
 const queryClient = new QueryClient();
 
