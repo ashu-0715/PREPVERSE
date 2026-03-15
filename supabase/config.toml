@@ -2,3 +2,6 @@ project_id = "wldmmwntzixpruoxtlxg"
 
 # Note: verify_jwt = false removed from generate-skill-image
 # Authentication is now handled in-code for better control
+
+[functions.process-study-material]
+verify_jwt = false
