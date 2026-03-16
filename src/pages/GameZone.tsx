@@ -14,8 +14,8 @@ import RunAndRevise from "@/components/gamezone/RunAndRevise";
 import GameDashboard from "@/components/gamezone/GameDashboard";
 import { motion } from "framer-motion";
 import {
-  Gamepad2, ArrowLeft, Swords, Shield, BookOpen, Upload, Trophy,
-  Zap, Play, Trash2
+  Gamepad2, ArrowLeft, Swords, Shield, Upload, Trophy,
+  Zap, Play, Trash2, PersonStanding
 } from "lucide-react";
 import { toast } from "sonner";
 
