@@ -10,11 +10,12 @@ import { QuestionSet } from "@/types/gamezone";
 import UploadSection from "@/components/gamezone/UploadSection";
 import SurvivalMode from "@/components/gamezone/SurvivalMode";
 import QuizBattle from "@/components/gamezone/QuizBattle";
+import RunAndRevise from "@/components/gamezone/RunAndRevise";
 import GameDashboard from "@/components/gamezone/GameDashboard";
 import { motion } from "framer-motion";
 import {
-  Gamepad2, ArrowLeft, Swords, Shield, BookOpen, Upload, Trophy,
-  Zap, Play, Trash2
+  Gamepad2, ArrowLeft, Swords, Shield, Upload, Trophy,
+  Zap, Play, Trash2, PersonStanding
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -111,6 +112,18 @@ const GameZone = () => {
     );
   }
 
+  if (activeGame === "runner" && selectedSetId) {
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-8">
+        <RunAndRevise
+          questionSetId={selectedSetId}
+          userId={userId}
+          onExit={() => { setActiveGame(null); setSelectedSetId(null); }}
+        />
+      </div>
+    );
+  }
+
   const gameModes = [
     {
       id: "battle",
@@ -131,14 +144,13 @@ const GameZone = () => {
       needsSet: true,
     },
     {
-      id: "topic",
-      title: "Topic Challenge",
-      description: "Master topics one level at a time",
-      icon: BookOpen,
-      color: "from-blue-500 to-cyan-500",
-      badge: "Coming Soon",
+      id: "runner",
+      title: "Run & Revise",
+      description: "Temple Run-style endless runner with quiz questions!",
+      icon: PersonStanding,
+      color: "from-violet-500 to-indigo-500",
+      badge: "Solo",
       needsSet: true,
-      disabled: true,
     },
   ];
 
@@ -190,11 +202,8 @@ const GameZone = () => {
                     transition={{ delay: i * 0.1 }}
                   >
                     <Card
-                      className={`overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 ${
-                        mode.disabled ? "opacity-60 cursor-not-allowed" : ""
-                      }`}
+                      className="overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1"
                       onClick={() => {
-                        if (mode.disabled) return;
                         if (mode.needsSet && questionSets.length === 0) {
                           toast.error("Upload study material first!");
                           return;
