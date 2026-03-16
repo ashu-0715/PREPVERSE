@@ -202,11 +202,8 @@ const GameZone = () => {
                     transition={{ delay: i * 0.1 }}
                   >
                     <Card
-                      className={`overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 ${
-                        mode.disabled ? "opacity-60 cursor-not-allowed" : ""
-                      }`}
+                      className="overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1"
                       onClick={() => {
-                        if (mode.disabled) return;
                         if (mode.needsSet && questionSets.length === 0) {
                           toast.error("Upload study material first!");
                           return;
