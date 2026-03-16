@@ -187,7 +187,20 @@ const SurvivalMode = ({ questionSetId, onExit, userId }: SurvivalModeProps) => {
     );
   }
 
-  if (!question) return null;
+  if (!question) {
+    return (
+      <div className="max-w-lg mx-auto text-center space-y-4">
+        <Card className="p-8">
+          <XCircle className="w-16 h-16 mx-auto text-destructive mb-4" />
+          <h2 className="text-xl font-bold mb-2">No Questions Found</h2>
+          <p className="text-muted-foreground mb-4">
+            This study material has no questions generated yet. Try re-uploading the file.
+          </p>
+          <Button onClick={onExit}>Back to Game Zone</Button>
+        </Card>
+      </div>
+    );
+  }
 
   const timerPercent = (timeLeft / 15) * 100;
   const timerColor = timeLeft > 10 ? "text-green-500" : timeLeft > 5 ? "text-yellow-500" : "text-red-500";
