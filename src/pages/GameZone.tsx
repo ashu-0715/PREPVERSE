@@ -144,14 +144,13 @@ const GameZone = () => {
       needsSet: true,
     },
     {
-      id: "topic",
-      title: "Topic Challenge",
-      description: "Master topics one level at a time",
-      icon: BookOpen,
-      color: "from-blue-500 to-cyan-500",
-      badge: "Coming Soon",
+      id: "runner",
+      title: "Run & Revise",
+      description: "Temple Run-style endless runner with quiz questions!",
+      icon: PersonStanding,
+      color: "from-violet-500 to-indigo-500",
+      badge: "Solo",
       needsSet: true,
-      disabled: true,
     },
   ];
 
