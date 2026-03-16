@@ -10,6 +10,7 @@ import { QuestionSet } from "@/types/gamezone";
 import UploadSection from "@/components/gamezone/UploadSection";
 import SurvivalMode from "@/components/gamezone/SurvivalMode";
 import QuizBattle from "@/components/gamezone/QuizBattle";
+import RunAndRevise from "@/components/gamezone/RunAndRevise";
 import GameDashboard from "@/components/gamezone/GameDashboard";
 import { motion } from "framer-motion";
 import {
