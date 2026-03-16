@@ -112,6 +112,18 @@ const GameZone = () => {
     );
   }
 
+  if (activeGame === "runner" && selectedSetId) {
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-8">
+        <RunAndRevise
+          questionSetId={selectedSetId}
+          userId={userId}
+          onExit={() => { setActiveGame(null); setSelectedSetId(null); }}
+        />
+      </div>
+    );
+  }
+
   const gameModes = [
     {
       id: "battle",
