@@ -105,11 +105,17 @@ Return ONLY a valid JSON array, no other text.`;
     // Parse JSON from AI response
     let questions;
     try {
-      const jsonMatch = aiContent.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) throw new Error("No JSON array found");
+      // Strip markdown code fences if present
+      let cleaned = aiContent.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
+      const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error("No JSON array found in: " + cleaned.substring(0, 200));
       questions = JSON.parse(jsonMatch[0]);
-    } catch {
-      throw new Error("Failed to parse AI-generated questions");
+      if (!Array.isArray(questions) || questions.length === 0) {
+        throw new Error("Parsed result is not a valid question array");
+      }
+    } catch (parseErr) {
+      console.error("Parse error:", parseErr, "Raw AI content:", aiContent.substring(0, 500));
+      throw new Error("Failed to parse AI-generated questions. Please try again.");
     }
 
     // Insert questions
