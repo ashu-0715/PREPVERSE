@@ -118,6 +118,7 @@ const GameZone = () => {
         <RunAndRevise
           questionSetId={selectedSetId}
           userId={userId}
+          difficulty={runnerDifficulty}
           onExit={() => { setActiveGame(null); setSelectedSetId(null); }}
         />
       </div>
