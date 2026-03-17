@@ -25,7 +25,7 @@ const GameZone = () => {
   const [questionSets, setQuestionSets] = useState<QuestionSet[]>([]);
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [runnerDifficulty, setRunnerDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const navigate = useNavigate();
 
   useEffect(() => {
