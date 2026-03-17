@@ -5,542 +5,853 @@ import { Badge } from "@/components/ui/badge";
 import { GameQuestion } from "@/types/gamezone";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Heart, Zap, XCircle } from "lucide-react";
+import {
+  Trophy, Heart, Zap, XCircle, Shield, Clock, Sparkles,
+  ArrowLeft, ArrowRight, RotateCcw, Users, BarChart3, Target,
+  ChevronLeft, ChevronRight, ChevronUp
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface RunAndReviseProps {
   questionSetId: string;
   userId: string;
   onExit: () => void;
+  difficulty?: "easy" | "medium" | "hard";
 }
 
-interface Obstacle {
-  x: number;
+interface AnswerGate {
+  z: number;
   lane: number;
-  type: "question" | "coin" | "heart";
+  text: string;
+  isCorrect: boolean;
   passed: boolean;
-  id: number;
+  opacity: number;
 }
 
-interface Particle {
+interface PowerUp {
+  z: number;
+  lane: number;
+  type: "freeze" | "fifty" | "shield" | "doubleXp" | "hint";
+  passed: boolean;
+}
+
+interface FloatingText {
   x: number;
   y: number;
+  text: string;
+  color: string;
+  life: number;
+  vy: number;
+}
+
+interface TrackParticle {
+  x: number;
+  y: number;
+  z: number;
   vx: number;
   vy: number;
   life: number;
   color: string;
+  size: number;
 }
 
-const LANE_COUNT = 3;
-const CANVAS_WIDTH = 600;
-const CANVAS_HEIGHT = 500;
-const PLAYER_SIZE = 40;
-const OBSTACLE_SIZE = 36;
-const GROUND_Y = CANVAS_HEIGHT - 80;
+interface TopicStat {
+  correct: number;
+  total: number;
+}
 
-const RunAndRevise = ({ questionSetId, userId, onExit }: RunAndReviseProps) => {
+const DIFFICULTY_CONFIG = {
+  easy: { speed: 2.5, speedInc: 0.08, questionTime: 20, label: "Easy", color: "#22c55e" },
+  medium: { speed: 3.5, speedInc: 0.12, questionTime: 15, label: "Medium", color: "#eab308" },
+  hard: { speed: 4.5, speedInc: 0.18, questionTime: 10, label: "Hard", color: "#ef4444" },
+};
+
+const POWER_UP_INFO: Record<string, { icon: string; name: string; color: string }> = {
+  freeze: { icon: "❄️", name: "Freeze Time", color: "#38bdf8" },
+  fifty: { icon: "✂️", name: "50/50", color: "#f59e0b" },
+  shield: { icon: "🛡️", name: "Shield", color: "#a78bfa" },
+  doubleXp: { icon: "⚡", name: "Double XP", color: "#f472b6" },
+  hint: { icon: "💡", name: "Hint Pulse", color: "#34d399" },
+};
+
+const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: RunAndReviseProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
-  const gameStateRef = useRef({
+  const config = DIFFICULTY_CONFIG[difficulty];
+
+  // Game state ref for animation loop
+  const gs = useRef({
     playerLane: 1,
     targetLane: 1,
     playerX: 0,
-    playerY: GROUND_Y - PLAYER_SIZE,
-    isJumping: false,
-    jumpVelocity: 0,
-    obstacles: [] as Obstacle[],
-    particles: [] as Particle[],
-    speed: 3,
+    speed: config.speed,
     distance: 0,
     score: 0,
+    xp: 0,
     lives: 3,
     streak: 0,
     maxStreak: 0,
-    coins: 0,
-    obstacleIdCounter: 0,
-    frameCount: 0,
-    groundOffset: 0,
-    bgStars: [] as { x: number; y: number; size: number; speed: number }[],
+    frame: 0,
+    trackOffset: 0,
+    answerGates: [] as AnswerGate[],
+    powerUps: [] as PowerUp[],
+    particles: [] as TrackParticle[],
+    floatingTexts: [] as FloatingText[],
+    currentQuestionIdx: 0,
+    waitingForAnswer: false,
+    questionTimer: 0,
+    questionTimerMax: config.questionTime,
+    answered: false,
+    totalCorrect: 0,
+    totalAnswered: 0,
+    hasShield: false,
+    doubleXpCount: 0,
+    frozenTimer: 0,
+    hintLane: -1,
+    topicStats: {} as Record<string, TopicStat>,
+    canvasW: 800,
+    canvasH: 500,
+    // Perspective settings
+    vanishY: 120,
+    horizonY: 140,
+    groundY: 460,
   });
 
   const [questions, setQuestions] = useState<GameQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const [showQuestion, setShowQuestion] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(null);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [displayScore, setDisplayScore] = useState(0);
-  const [displayLives, setDisplayLives] = useState(3);
-  const [displayStreak, setDisplayStreak] = useState(0);
-  const [displayCoins, setDisplayCoins] = useState(0);
-  const [displayDistance, setDisplayDistance] = useState(0);
-  const [finalStats, setFinalStats] = useState({ score: 0, distance: 0, maxStreak: 0, coins: 0 });
+  const [currentQ, setCurrentQ] = useState<GameQuestion | null>(null);
+  const [questionTimerDisplay, setQuestionTimerDisplay] = useState(0);
+  const [hud, setHud] = useState({ score: 0, xp: 0, lives: 3, streak: 0, distance: 0, qNum: 0, qTotal: 0, topic: "" });
+  const [feedback, setFeedback] = useState<{ type: "correct" | "wrong"; text: string; explanation?: string } | null>(null);
+  const [activePowerUp, setActivePowerUp] = useState<string | null>(null);
+  const [finalStats, setFinalStats] = useState({
+    score: 0, xp: 0, accuracy: 0, maxStreak: 0, totalAnswered: 0, totalCorrect: 0,
+    weakTopics: [] as string[], strongTopics: [] as string[],
+  });
 
-  const isPausedRef = useRef(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Load questions
   useEffect(() => {
-    const fetchQuestions = async () => {
-      const { data } = await supabase
-        .from("game_questions")
-        .select("*")
-        .eq("question_set_id", questionSetId);
+    const fetch = async () => {
+      const { data } = await supabase.from("game_questions").select("*").eq("question_set_id", questionSetId);
       if (data && data.length > 0) {
-        const shuffled = (data as unknown as GameQuestion[]).sort(() => Math.random() - 0.5);
-        setQuestions(shuffled);
+        setQuestions((data as unknown as GameQuestion[]).sort(() => Math.random() - 0.5));
       }
       setLoading(false);
     };
-    fetchQuestions();
+    fetch();
   }, [questionSetId]);
 
-  // Init background stars
-  useEffect(() => {
-    const stars = Array.from({ length: 50 }, () => ({
-      x: Math.random() * CANVAS_WIDTH,
-      y: Math.random() * (GROUND_Y - 60),
-      size: Math.random() * 2 + 1,
-      speed: Math.random() * 0.5 + 0.2,
-    }));
-    gameStateRef.current.bgStars = stars;
-  }, []);
+  // Spawn answer gates for current question
+  const spawnAnswerGates = useCallback((q: GameQuestion) => {
+    const g = gs.current;
+    g.answerGates = [];
+    const opts = q.options.slice(0, 3);
+    // Shuffle options into lanes
+    const shuffled = opts.map((text, i) => ({
+      text,
+      isCorrect: text === q.correct_answer,
+      lane: i,
+    })).sort(() => Math.random() - 0.5).map((o, i) => ({ ...o, lane: i }));
 
-  const getLaneX = (lane: number) => {
-    const laneWidth = CANVAS_WIDTH / LANE_COUNT;
-    return laneWidth * lane + laneWidth / 2;
-  };
-
-  const addParticles = (x: number, y: number, color: string, count: number = 8) => {
-    const gs = gameStateRef.current;
-    for (let i = 0; i < count; i++) {
-      gs.particles.push({
-        x, y,
-        vx: (Math.random() - 0.5) * 6,
-        vy: (Math.random() - 1) * 5,
-        life: 1,
-        color,
+    shuffled.forEach(o => {
+      g.answerGates.push({
+        z: 800,
+        lane: o.lane,
+        text: o.text,
+        isCorrect: o.isCorrect,
+        passed: false,
+        opacity: 1,
       });
-    }
-  };
-
-  const spawnObstacle = useCallback(() => {
-    const gs = gameStateRef.current;
-    const lane = Math.floor(Math.random() * LANE_COUNT);
-    const rand = Math.random();
-    let type: Obstacle["type"] = "question";
-    if (rand > 0.7) type = "coin";
-    else if (rand > 0.9 && gs.lives < 3) type = "heart";
-
-    gs.obstacles.push({
-      x: CANVAS_WIDTH + 50,
-      lane,
-      type,
-      passed: false,
-      id: gs.obstacleIdCounter++,
     });
+    g.waitingForAnswer = true;
+    g.answered = false;
+    g.questionTimer = g.questionTimerMax * 60; // frames
+    g.hintLane = -1;
   }, []);
 
-  const triggerQuestion = useCallback(() => {
-    if (questionIndex >= questions.length) {
-      setQuestionIndex(0);
+  // Advance to next question
+  const nextQuestion = useCallback(() => {
+    const g = gs.current;
+    const idx = g.currentQuestionIdx;
+    if (idx >= questions.length) {
+      endGame();
+      return;
     }
-    const q = questions[questionIndex % questions.length];
-    setCurrentQuestion(q);
-    setShowQuestion(true);
-    isPausedRef.current = true;
-  }, [questions, questionIndex]);
+    const q = questions[idx];
+    setCurrentQ(q);
+    setHud(h => ({ ...h, qNum: idx + 1, qTotal: questions.length, topic: q.topic || "General" }));
+    spawnAnswerGates(q);
+  }, [questions, spawnAnswerGates]);
 
-  const handleAnswer = useCallback((answer: string) => {
-    if (!currentQuestion) return;
-    const gs = gameStateRef.current;
-    const isCorrect = answer === currentQuestion.correct_answer;
+  // Handle answer selection (when player runs through a gate)
+  const processAnswer = useCallback((chosenText: string) => {
+    const g = gs.current;
+    if (g.answered) return;
+    g.answered = true;
+    g.waitingForAnswer = false;
+    g.totalAnswered++;
+
+    const q = questions[g.currentQuestionIdx];
+    const isCorrect = chosenText === q?.correct_answer;
+    const topic = q?.topic || "General";
+
+    if (!g.topicStats[topic]) g.topicStats[topic] = { correct: 0, total: 0 };
+    g.topicStats[topic].total++;
 
     if (isCorrect) {
-      const points = 200 + gs.streak * 25;
-      gs.score += points;
-      gs.streak++;
-      gs.maxStreak = Math.max(gs.maxStreak, gs.streak);
-      gs.speed = Math.min(8, gs.speed + 0.15);
-      addParticles(gs.playerX, gs.playerY, "#22c55e", 15);
-      toast.success(`+${points} points! 🔥`, { duration: 1500 });
-    } else {
-      gs.lives--;
-      gs.streak = 0;
-      addParticles(gs.playerX, gs.playerY, "#ef4444", 15);
-      toast.error("Wrong answer! ❌", { duration: 1500 });
-      if (gs.lives <= 0) {
-        setGameOver(true);
-        setFinalStats({
-          score: gs.score,
-          distance: Math.floor(gs.distance),
-          maxStreak: gs.maxStreak,
-          coins: gs.coins,
+      g.totalCorrect++;
+      g.topicStats[topic].correct++;
+      const basePoints = 200;
+      const streakBonus = g.streak * 30;
+      const multiplier = g.doubleXpCount > 0 ? 2 : 1;
+      const pts = (basePoints + streakBonus) * multiplier;
+      g.score += pts;
+      g.xp += Math.floor(pts * 0.6);
+      g.streak++;
+      g.maxStreak = Math.max(g.maxStreak, g.streak);
+      g.speed = Math.min(config.speed + 4, g.speed + config.speedInc);
+      if (g.doubleXpCount > 0) g.doubleXpCount--;
+
+      // Green burst particles
+      for (let i = 0; i < 20; i++) {
+        g.particles.push({
+          x: g.playerX, y: g.groundY - 60, z: 0,
+          vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 1) * 6,
+          life: 1, color: "#22c55e", size: Math.random() * 4 + 2,
         });
-        saveStats(gs);
-        return;
+      }
+      g.floatingTexts.push({ x: g.canvasW / 2, y: g.groundY - 100, text: `+${pts} ✓`, color: "#22c55e", life: 1.5, vy: -2 });
+      setFeedback({ type: "correct", text: "Correct!", explanation: q?.explanation || undefined });
+    } else {
+      if (g.hasShield) {
+        g.hasShield = false;
+        g.floatingTexts.push({ x: g.canvasW / 2, y: g.groundY - 100, text: "Shield saved you!", color: "#a78bfa", life: 1.5, vy: -2 });
+        setFeedback({ type: "wrong", text: `Shield blocked! Answer: ${q?.correct_answer}`, explanation: q?.explanation || undefined });
+      } else {
+        g.lives--;
+        g.streak = 0;
+        // Red burst
+        for (let i = 0; i < 15; i++) {
+          g.particles.push({
+            x: g.playerX, y: g.groundY - 60, z: 0,
+            vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 1) * 5,
+            life: 1, color: "#ef4444", size: Math.random() * 3 + 2,
+          });
+        }
+        g.floatingTexts.push({ x: g.canvasW / 2, y: g.groundY - 100, text: "✗ Wrong!", color: "#ef4444", life: 1.5, vy: -2 });
+        setFeedback({ type: "wrong", text: `Answer: ${q?.correct_answer}`, explanation: q?.explanation || undefined });
       }
     }
 
-    setDisplayScore(gs.score);
-    setDisplayLives(gs.lives);
-    setDisplayStreak(gs.streak);
-    setQuestionIndex(prev => prev + 1);
-    setShowQuestion(false);
-    isPausedRef.current = false;
-  }, [currentQuestion]);
+    setHud(h => ({ ...h, score: g.score, xp: g.xp, lives: g.lives, streak: g.streak }));
 
-  const saveStats = async (gs: typeof gameStateRef.current) => {
+    // Brief pause then next question
+    setTimeout(() => {
+      setFeedback(null);
+      if (g.lives <= 0) {
+        endGame();
+      } else {
+        g.currentQuestionIdx++;
+        g.answerGates = [];
+        setTimeout(() => nextQuestion(), 300);
+      }
+    }, 1800);
+  }, [questions, config, nextQuestion]);
+
+  const endGame = useCallback(() => {
+    const g = gs.current;
+    const topicEntries = Object.entries(g.topicStats);
+    const weak = topicEntries.filter(([, s]) => s.total > 0 && s.correct / s.total < 0.5).map(([t]) => t);
+    const strong = topicEntries.filter(([, s]) => s.total > 0 && s.correct / s.total >= 0.7).map(([t]) => t);
+
+    setFinalStats({
+      score: g.score, xp: g.xp,
+      accuracy: g.totalAnswered > 0 ? Math.round((g.totalCorrect / g.totalAnswered) * 100) : 0,
+      maxStreak: g.maxStreak, totalAnswered: g.totalAnswered, totalCorrect: g.totalCorrect,
+      weakTopics: weak, strongTopics: strong,
+    });
+    setGameOver(true);
+    setGameStarted(false);
+    saveStats(g);
+  }, []);
+
+  const saveStats = async (g: typeof gs.current) => {
     try {
-      const { data: existing } = await supabase
-        .from("user_game_stats")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
-
+      const { data: existing } = await supabase.from("user_game_stats").select("*").eq("user_id", userId).single();
       if (existing) {
         await supabase.from("user_game_stats").update({
-          total_xp: (existing as any).total_xp + gs.score,
-          games_played: (existing as any).games_played + 1,
-          longest_streak: Math.max((existing as any).longest_streak, gs.maxStreak),
+          total_xp: ((existing as any).total_xp || 0) + g.xp,
+          games_played: ((existing as any).games_played || 0) + 1,
+          total_correct: ((existing as any).total_correct || 0) + g.totalCorrect,
+          total_answered: ((existing as any).total_answered || 0) + g.totalAnswered,
+          longest_streak: Math.max((existing as any).longest_streak || 0, g.maxStreak),
         }).eq("user_id", userId);
       } else {
         await supabase.from("user_game_stats").insert({
-          user_id: userId,
-          total_xp: gs.score,
-          games_played: 1,
-          longest_streak: gs.maxStreak,
+          user_id: userId, total_xp: g.xp, games_played: 1,
+          total_correct: g.totalCorrect, total_answered: g.totalAnswered, longest_streak: g.maxStreak,
         });
       }
-      toast.success(`+${gs.score} XP earned!`);
-    } catch (e) {
-      console.error("Failed to save stats:", e);
-    }
+    } catch (e) { console.error("Save stats error:", e); }
   };
 
-  // Game loop
+  // ============ PERSPECTIVE 3D RENDERING ============
+  const project3D = (laneIdx: number, z: number, cw: number, ch: number) => {
+    const g = gs.current;
+    const perspective = 400;
+    const scale = perspective / (perspective + z);
+    const laneWidth = cw * 0.22;
+    const cx = cw / 2;
+    const laneOffset = (laneIdx - 1) * laneWidth;
+    const x = cx + laneOffset * scale;
+    const y = g.horizonY + (g.groundY - g.horizonY) * scale;
+    return { x, y, scale };
+  };
+
+  // Main game loop
   useEffect(() => {
     if (!gameStarted || gameOver || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d")!;
+    const g = gs.current;
+
+    // Resize canvas
+    const resize = () => {
+      const container = containerRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const w = Math.min(rect.width, 900);
+      const h = Math.min(w * 0.625, 560);
+      canvas.width = w;
+      canvas.height = h;
+      g.canvasW = w;
+      g.canvasH = h;
+      g.horizonY = h * 0.25;
+      g.groundY = h * 0.88;
+      g.vanishY = h * 0.2;
+    };
+    resize();
+    window.addEventListener("resize", resize);
 
     const render = () => {
-      const gs = gameStateRef.current;
+      const cw = g.canvasW;
+      const ch = g.canvasH;
 
-      if (!isPausedRef.current) {
-        gs.frameCount++;
-        gs.distance += gs.speed * 0.1;
-        gs.groundOffset = (gs.groundOffset + gs.speed) % 40;
+      g.frame++;
+      g.trackOffset = (g.trackOffset + g.speed * 2) % 60;
 
-        // Smooth lane transition
-        const targetX = getLaneX(gs.targetLane);
-        gs.playerX += (targetX - gs.playerX) * 0.15;
-        gs.playerLane = gs.targetLane;
+      // Slow movement if frozen
+      const effectiveSpeed = g.frozenTimer > 0 ? g.speed * 0.3 : g.speed;
+      if (g.frozenTimer > 0) g.frozenTimer--;
+      g.distance += effectiveSpeed * 0.1;
 
-        // Jumping
-        if (gs.isJumping) {
-          gs.jumpVelocity += 0.8;
-          gs.playerY += gs.jumpVelocity;
-          if (gs.playerY >= GROUND_Y - PLAYER_SIZE) {
-            gs.playerY = GROUND_Y - PLAYER_SIZE;
-            gs.isJumping = false;
-            gs.jumpVelocity = 0;
-          }
+      // Lane smoothing
+      const laneWidth = cw * 0.22;
+      const cx = cw / 2;
+      const targetX = cx + (g.targetLane - 1) * laneWidth;
+      g.playerX += (targetX - g.playerX) * 0.12;
+      g.playerLane = g.targetLane;
+
+      // Move answer gates toward player
+      if (g.waitingForAnswer && !g.answered) {
+        g.questionTimer--;
+        setQuestionTimerDisplay(Math.max(0, Math.ceil(g.questionTimer / 60)));
+        // Auto-fail on timeout
+        if (g.questionTimer <= 0) {
+          processAnswer("__timeout__");
         }
 
-        // Spawn obstacles
-        if (gs.frameCount % Math.max(60, 120 - Math.floor(gs.distance / 10)) === 0) {
-          spawnObstacle();
-        }
-
-        // Move obstacles
-        gs.obstacles = gs.obstacles.filter(obs => {
-          obs.x -= gs.speed * 2;
-          if (obs.x < -50) return false;
-
-          // Collision detection
-          const obsX = obs.x;
-          const obsY = GROUND_Y - OBSTACLE_SIZE;
-          const playerCenterX = gs.playerX;
-          const obsCenterX = obsX;
-          const obsLaneX = getLaneX(obs.lane);
-
-          if (
-            !obs.passed &&
-            Math.abs(playerCenterX - obsLaneX) < PLAYER_SIZE * 0.8 &&
-            Math.abs(obsX - gs.playerX) < PLAYER_SIZE &&
-            gs.playerY + PLAYER_SIZE > obsY
-          ) {
-            obs.passed = true;
-            if (obs.type === "question") {
-              triggerQuestion();
-            } else if (obs.type === "coin") {
-              gs.coins++;
-              gs.score += 50;
-              addParticles(obsX, obsY, "#eab308", 10);
-              setDisplayCoins(gs.coins);
-              setDisplayScore(gs.score);
-            } else if (obs.type === "heart") {
-              gs.lives = Math.min(3, gs.lives + 1);
-              addParticles(obsX, obsY, "#ef4444", 10);
-              setDisplayLives(gs.lives);
+        g.answerGates.forEach(gate => {
+          gate.z -= effectiveSpeed * 3;
+          // When gate reaches player (z near 0), select based on player lane
+          if (!gate.passed && gate.z <= 30) {
+            gate.passed = true;
+            if (gate.lane === g.targetLane) {
+              processAnswer(gate.text);
             }
-            return obs.type === "question";
           }
-          return true;
         });
 
-        // Update particles
-        gs.particles = gs.particles.filter(p => {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vy += 0.15;
-          p.life -= 0.025;
-          return p.life > 0;
-        });
+        // If all gates passed without selection (shouldn't happen with 3 lanes)
+        if (g.answerGates.every(ga => ga.passed) && !g.answered) {
+          // Player was in a lane with a gate, already handled above
+        }
       }
 
-      // === DRAW ===
-      // Sky gradient
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
-      skyGrad.addColorStop(0, "#0f0a1e");
-      skyGrad.addColorStop(0.5, "#1a1035");
-      skyGrad.addColorStop(1, "#2d1b69");
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-      // Stars
-      gs.bgStars.forEach(star => {
-        if (!isPausedRef.current) {
-          star.x -= star.speed * gs.speed * 0.3;
-          if (star.x < 0) star.x = CANVAS_WIDTH;
+      // Power-ups movement
+      g.powerUps = g.powerUps.filter(pu => {
+        pu.z -= effectiveSpeed * 3;
+        if (!pu.passed && pu.z <= 30 && pu.lane === g.targetLane) {
+          pu.passed = true;
+          activatePowerUp(pu.type);
         }
-        ctx.fillStyle = `rgba(255,255,255,${0.4 + Math.sin(gs.frameCount * 0.02 + star.y) * 0.3})`;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-        ctx.fill();
+        return pu.z > -100;
       });
 
-      // Mountains silhouette
-      ctx.fillStyle = "#1a0f2e";
-      ctx.beginPath();
-      ctx.moveTo(0, GROUND_Y);
-      for (let x = 0; x <= CANVAS_WIDTH; x += 60) {
-        ctx.lineTo(x, GROUND_Y - 40 - Math.sin(x * 0.01 + gs.distance * 0.01) * 30);
+      // Update particles
+      g.particles = g.particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2;
+        p.life -= 0.02;
+        return p.life > 0;
+      });
+
+      // Update floating texts
+      g.floatingTexts = g.floatingTexts.filter(ft => {
+        ft.y += ft.vy;
+        ft.life -= 0.02;
+        return ft.life > 0;
+      });
+
+      // ============ DRAWING ============
+
+      // Sky - deep space gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, g.horizonY + 50);
+      skyGrad.addColorStop(0, "#050a18");
+      skyGrad.addColorStop(0.4, "#0c1629");
+      skyGrad.addColorStop(1, "#141e3a");
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, cw, ch);
+
+      // Twinkling stars
+      for (let i = 0; i < 60; i++) {
+        const sx = ((i * 137.5 + g.frame * 0.05 * (i % 3 + 1)) % cw);
+        const sy = (i * 37.7) % (g.horizonY);
+        const alpha = 0.3 + Math.sin(g.frame * 0.03 + i) * 0.3;
+        ctx.fillStyle = `rgba(200,210,255,${alpha})`;
+        ctx.beginPath();
+        ctx.arc(sx, sy, (i % 3) * 0.5 + 0.5, 0, Math.PI * 2);
+        ctx.fill();
       }
-      ctx.lineTo(CANVAS_WIDTH, GROUND_Y);
+
+      // Distant cityscape silhouette
+      ctx.fillStyle = "#0d1525";
+      ctx.beginPath();
+      ctx.moveTo(0, g.horizonY + 20);
+      for (let x = 0; x < cw; x += 25) {
+        const h = 15 + Math.sin(x * 0.03) * 10 + Math.cos(x * 0.07) * 8 + (x % 50 < 20 ? 15 : 0);
+        ctx.lineTo(x, g.horizonY + 20 - h);
+      }
+      ctx.lineTo(cw, g.horizonY + 20);
       ctx.fill();
 
-      // Ground
-      const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, CANVAS_HEIGHT);
-      groundGrad.addColorStop(0, "#4a1d96");
-      groundGrad.addColorStop(1, "#2d1160");
-      ctx.fillStyle = groundGrad;
-      ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
-
-      // Ground lines (moving)
-      ctx.strokeStyle = "rgba(139, 92, 246, 0.3)";
-      ctx.lineWidth = 1;
-      for (let x = -gs.groundOffset; x < CANVAS_WIDTH; x += 40) {
-        ctx.beginPath();
-        ctx.moveTo(x, GROUND_Y);
-        ctx.lineTo(x, CANVAS_HEIGHT);
-        ctx.stroke();
+      // Glowing city lights
+      for (let x = 20; x < cw; x += 40) {
+        const flicker = Math.sin(g.frame * 0.05 + x) > 0.5 ? 0.7 : 0.3;
+        ctx.fillStyle = `rgba(100,180,255,${flicker * 0.3})`;
+        ctx.fillRect(x, g.horizonY + 5 - (x % 50 < 20 ? 12 : 0), 2, 3);
       }
 
-      // Lane markers
-      for (let i = 1; i < LANE_COUNT; i++) {
-        const lx = (CANVAS_WIDTH / LANE_COUNT) * i;
-        ctx.strokeStyle = "rgba(167, 139, 250, 0.2)";
-        ctx.setLineDash([10, 10]);
+      // ============ DRAW 3D TRACK ============
+      // Track background (converging to vanishing point)
+      const trackLeftNear = cx - laneWidth * 2;
+      const trackRightNear = cx + laneWidth * 2;
+      const vanishX = cx;
+
+      // Track fill with gradient
+      const trackGrad = ctx.createLinearGradient(0, g.horizonY, 0, g.groundY);
+      trackGrad.addColorStop(0, "rgba(20,10,50,0.9)");
+      trackGrad.addColorStop(1, "rgba(30,15,70,0.95)");
+      ctx.fillStyle = trackGrad;
+      ctx.beginPath();
+      ctx.moveTo(vanishX - 5, g.horizonY);
+      ctx.lineTo(vanishX + 5, g.horizonY);
+      ctx.lineTo(trackRightNear, g.groundY);
+      ctx.lineTo(trackLeftNear, g.groundY);
+      ctx.fill();
+
+      // Track edge glow lines
+      ctx.strokeStyle = "rgba(139,92,246,0.5)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(vanishX - 3, g.horizonY);
+      ctx.lineTo(trackLeftNear, g.groundY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(vanishX + 3, g.horizonY);
+      ctx.lineTo(trackRightNear, g.groundY);
+      ctx.stroke();
+
+      // Lane dividers (perspective)
+      for (let lane = 0; lane <= 3; lane++) {
+        const laneX = lane - 1.5;
+        ctx.strokeStyle = `rgba(167,139,250,${lane === 0 || lane === 3 ? 0.0 : 0.25})`;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([8, 12]);
         ctx.beginPath();
-        ctx.moveTo(lx, GROUND_Y - 80);
-        ctx.lineTo(lx, GROUND_Y);
+        for (let z = 0; z <= 800; z += 20) {
+          const p = project3D(laneX + 0.5, z, cw, ch);
+          if (z === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
         ctx.stroke();
         ctx.setLineDash([]);
       }
 
-      // Draw obstacles
-      gs.obstacles.forEach(obs => {
-        if (obs.passed) return;
-        const ox = obs.x;
-        const oy = GROUND_Y - OBSTACLE_SIZE - 4;
+      // Moving track lines (perspective road markings)
+      for (let z = (g.trackOffset); z < 800; z += 60) {
+        const p = project3D(0, z, cw, ch);
+        const s = p.scale;
+        if (s < 0.05) continue;
+        ctx.strokeStyle = `rgba(139,92,246,${s * 0.3})`;
+        ctx.lineWidth = Math.max(1, s * 2);
+        const halfW = laneWidth * 2 * s;
+        ctx.beginPath();
+        ctx.moveTo(cx - halfW, p.y);
+        ctx.lineTo(cx + halfW, p.y);
+        ctx.stroke();
+      }
 
-        if (obs.type === "question") {
-          // Question block - glowing purple cube
-          const glow = ctx.createRadialGradient(ox, oy + OBSTACLE_SIZE / 2, 5, ox, oy + OBSTACLE_SIZE / 2, OBSTACLE_SIZE);
-          glow.addColorStop(0, "rgba(168, 85, 247, 0.4)");
-          glow.addColorStop(1, "rgba(168, 85, 247, 0)");
-          ctx.fillStyle = glow;
-          ctx.fillRect(ox - OBSTACLE_SIZE, oy - OBSTACLE_SIZE / 2, OBSTACLE_SIZE * 2, OBSTACLE_SIZE * 2);
+      // ============ DRAW ANSWER GATES ============
+      g.answerGates.forEach(gate => {
+        if (gate.z < -50) return;
+        const p = project3D(gate.lane, gate.z, cw, ch);
+        const s = p.scale;
+        if (s < 0.03) return;
 
-          ctx.fillStyle = "#a855f7";
-          ctx.strokeStyle = "#c084fc";
-          ctx.lineWidth = 2;
-          const s = OBSTACLE_SIZE * 0.8;
-          ctx.fillRect(ox - s / 2, oy, s, s);
-          ctx.strokeRect(ox - s / 2, oy, s, s);
-          ctx.fillStyle = "#fff";
-          ctx.font = "bold 20px monospace";
+        const gateW = laneWidth * s * 0.85;
+        const gateH = 50 * s;
+
+        // Hint glow
+        const isHint = g.hintLane === gate.lane;
+
+        // Gate arch glow
+        const glowColor = gate.isCorrect && isHint
+          ? "rgba(52,211,153,0.4)"
+          : "rgba(139,92,246,0.35)";
+
+        ctx.shadowColor = isHint ? "#34d399" : "#8b5cf6";
+        ctx.shadowBlur = 15 * s;
+
+        // Gate frame
+        ctx.strokeStyle = isHint ? "rgba(52,211,153,0.9)" : "rgba(167,139,250,0.8)";
+        ctx.lineWidth = Math.max(2, 3 * s);
+        const gx = p.x - gateW / 2;
+        const gy = p.y - gateH;
+
+        // Arch shape
+        ctx.beginPath();
+        ctx.moveTo(gx, p.y);
+        ctx.lineTo(gx, gy + 8 * s);
+        ctx.quadraticCurveTo(gx, gy, gx + 8 * s, gy);
+        ctx.lineTo(gx + gateW - 8 * s, gy);
+        ctx.quadraticCurveTo(gx + gateW, gy, gx + gateW, gy + 8 * s);
+        ctx.lineTo(gx + gateW, p.y);
+        ctx.stroke();
+
+        // Gate fill
+        const gateFill = ctx.createLinearGradient(gx, gy, gx, p.y);
+        gateFill.addColorStop(0, isHint ? "rgba(52,211,153,0.2)" : "rgba(88,28,235,0.25)");
+        gateFill.addColorStop(1, isHint ? "rgba(52,211,153,0.05)" : "rgba(88,28,235,0.05)");
+        ctx.fillStyle = gateFill;
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+
+        // Answer text (only if close enough to read)
+        if (s > 0.15) {
+          const fontSize = Math.max(10, Math.floor(14 * s));
+          ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
           ctx.textAlign = "center";
-          ctx.fillText("?", ox, oy + s / 2 + 7);
-        } else if (obs.type === "coin") {
-          // Coin - spinning golden circle
-          const coinBounce = Math.sin(gs.frameCount * 0.1 + obs.id) * 4;
-          ctx.fillStyle = "#eab308";
-          ctx.strokeStyle = "#fde047";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(ox, oy + OBSTACLE_SIZE / 2 + coinBounce, 14, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = "#854d0e";
-          ctx.font = "bold 14px monospace";
-          ctx.textAlign = "center";
-          ctx.fillText("$", ox, oy + OBSTACLE_SIZE / 2 + 5 + coinBounce);
-        } else if (obs.type === "heart") {
-          const hBounce = Math.sin(gs.frameCount * 0.08 + obs.id) * 3;
-          ctx.fillStyle = "#ef4444";
-          ctx.font = "28px serif";
-          ctx.textAlign = "center";
-          ctx.fillText("❤️", ox, oy + OBSTACLE_SIZE / 2 + 8 + hBounce);
+          ctx.fillStyle = `rgba(255,255,255,${Math.min(1, s * 2)})`;
+
+          // Truncate long text
+          let displayText = gate.text;
+          const maxChars = Math.floor(gateW / (fontSize * 0.5));
+          if (displayText.length > maxChars) displayText = displayText.slice(0, maxChars - 1) + "…";
+
+          ctx.fillText(displayText, p.x, p.y - gateH / 2 + fontSize / 3);
+        }
+
+        // Lane letter label at top
+        if (s > 0.2) {
+          const label = ["A", "B", "C"][gate.lane];
+          const lSize = Math.max(8, Math.floor(10 * s));
+          ctx.font = `bold ${lSize}px monospace`;
+          ctx.fillStyle = "rgba(167,139,250,0.7)";
+          ctx.fillText(label, p.x, gy - 4 * s);
         }
       });
 
-      // Draw player (running character)
-      const px = gs.playerX;
-      const py = gs.playerY;
-      const bobble = isPausedRef.current ? 0 : Math.sin(gs.frameCount * 0.2) * 3;
+      // ============ DRAW POWER-UPS ============
+      g.powerUps.forEach(pu => {
+        if (pu.passed || pu.z < -50) return;
+        const p = project3D(pu.lane, pu.z, cw, ch);
+        const s = p.scale;
+        if (s < 0.05) return;
+        const info = POWER_UP_INFO[pu.type];
+        const puSize = Math.max(10, 24 * s);
+        const bobble = Math.sin(g.frame * 0.08 + pu.z) * 5 * s;
 
-      // Player glow
-      const playerGlow = ctx.createRadialGradient(px, py + PLAYER_SIZE / 2, 5, px, py + PLAYER_SIZE / 2, PLAYER_SIZE * 1.5);
-      playerGlow.addColorStop(0, "rgba(59, 130, 246, 0.3)");
-      playerGlow.addColorStop(1, "rgba(59, 130, 246, 0)");
-      ctx.fillStyle = playerGlow;
-      ctx.beginPath();
-      ctx.arc(px, py + PLAYER_SIZE / 2, PLAYER_SIZE * 1.5, 0, Math.PI * 2);
-      ctx.fill();
+        ctx.shadowColor = info.color;
+        ctx.shadowBlur = 12 * s;
+        ctx.font = `${puSize}px serif`;
+        ctx.textAlign = "center";
+        ctx.fillText(info.icon, p.x, p.y - 15 * s + bobble);
+        ctx.shadowBlur = 0;
+      });
 
-      // Body
-      ctx.fillStyle = "#3b82f6";
+      // ============ DRAW PLAYER ============
+      const playerY = g.groundY;
+      const px = g.playerX;
+      const bobble = Math.sin(g.frame * 0.15) * 3;
+
+      // Player glow trail
+      for (let i = 3; i >= 1; i--) {
+        const alpha = 0.1 / i;
+        ctx.fillStyle = `rgba(99,102,241,${alpha})`;
+        ctx.beginPath();
+        ctx.arc(px, playerY - 25 + bobble, 20 + i * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Character body (futuristic scholar)
+      // Cloak/body
+      const bodyGrad = ctx.createLinearGradient(px, playerY - 55 + bobble, px, playerY + bobble);
+      bodyGrad.addColorStop(0, "#6366f1");
+      bodyGrad.addColorStop(1, "#4338ca");
+      ctx.fillStyle = bodyGrad;
       ctx.beginPath();
-      ctx.arc(px, py + 12 + bobble, 14, 0, Math.PI * 2);
+      ctx.moveTo(px - 14, playerY + bobble);
+      ctx.lineTo(px - 10, playerY - 35 + bobble);
+      ctx.quadraticCurveTo(px, playerY - 50 + bobble, px + 10, playerY - 35 + bobble);
+      ctx.lineTo(px + 14, playerY + bobble);
       ctx.fill();
 
       // Head
       ctx.fillStyle = "#fbbf24";
       ctx.beginPath();
-      ctx.arc(px, py - 2 + bobble, 10, 0, Math.PI * 2);
+      ctx.arc(px, playerY - 48 + bobble, 10, 0, Math.PI * 2);
       ctx.fill();
 
-      // Eyes
-      ctx.fillStyle = "#1e293b";
-      ctx.beginPath();
-      ctx.arc(px + 3, py - 4 + bobble, 2, 0, Math.PI * 2);
-      ctx.fill();
+      // Visor/glasses
+      ctx.fillStyle = "#1e1b4b";
+      ctx.fillRect(px - 8, playerY - 51 + bobble, 16, 5);
+      ctx.fillStyle = "#38bdf8";
+      ctx.fillRect(px - 7, playerY - 50 + bobble, 6, 3);
+      ctx.fillRect(px + 1, playerY - 50 + bobble, 6, 3);
 
-      // Running legs
-      const legAngle = Math.sin(gs.frameCount * 0.25) * 0.6;
-      ctx.strokeStyle = "#3b82f6";
-      ctx.lineWidth = 4;
+      // Energy aura
+      if (g.hasShield) {
+        ctx.strokeStyle = "rgba(167,139,250,0.5)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(px, playerY - 25 + bobble, 25, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Running animation legs
+      const legPhase = g.frame * 0.2;
+      ctx.strokeStyle = "#4338ca";
+      ctx.lineWidth = 3;
       ctx.lineCap = "round";
       // Left leg
       ctx.beginPath();
-      ctx.moveTo(px - 4, py + 22 + bobble);
-      ctx.lineTo(px - 4 + Math.sin(legAngle) * 12, py + PLAYER_SIZE + bobble);
+      ctx.moveTo(px - 5, playerY - 5 + bobble);
+      ctx.lineTo(px - 5 + Math.sin(legPhase) * 10, playerY + 5 + bobble);
       ctx.stroke();
       // Right leg
       ctx.beginPath();
-      ctx.moveTo(px + 4, py + 22 + bobble);
-      ctx.lineTo(px + 4 + Math.sin(-legAngle) * 12, py + PLAYER_SIZE + bobble);
+      ctx.moveTo(px + 5, playerY - 5 + bobble);
+      ctx.lineTo(px + 5 + Math.sin(legPhase + Math.PI) * 10, playerY + 5 + bobble);
       ctx.stroke();
 
-      // Trail effect
-      if (!isPausedRef.current) {
-        ctx.fillStyle = `rgba(59, 130, 246, ${0.1 + Math.sin(gs.frameCount * 0.1) * 0.05})`;
-        for (let i = 1; i <= 3; i++) {
-          ctx.beginPath();
-          ctx.arc(px - i * 15, py + 15, 8 - i * 2, 0, Math.PI * 2);
-          ctx.fill();
-        }
+      // Speed trail
+      const trailAlpha = Math.min(0.4, g.speed * 0.05);
+      ctx.fillStyle = `rgba(99,102,241,${trailAlpha})`;
+      for (let i = 1; i <= 4; i++) {
+        ctx.beginPath();
+        ctx.arc(px - i * 8, playerY - 20 + bobble + Math.sin(g.frame * 0.15 + i) * 2, 6 - i, 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      // Particles
-      gs.particles.forEach(p => {
-        ctx.fillStyle = p.color + Math.floor(p.life * 255).toString(16).padStart(2, "0");
+      // ============ PARTICLES & FLOATING TEXTS ============
+      g.particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.life * 4, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
         ctx.fill();
       });
+      ctx.globalAlpha = 1;
 
-      // Distance marker
-      setDisplayDistance(Math.floor(gs.distance));
+      g.floatingTexts.forEach(ft => {
+        ctx.font = `bold ${16}px system-ui`;
+        ctx.textAlign = "center";
+        ctx.fillStyle = ft.color;
+        ctx.globalAlpha = Math.min(1, ft.life);
+        ctx.fillText(ft.text, ft.x, ft.y);
+      });
+      ctx.globalAlpha = 1;
+
+      // Side glow effects
+      const sideGlow = ctx.createLinearGradient(0, 0, 60, 0);
+      sideGlow.addColorStop(0, "rgba(88,28,235,0.15)");
+      sideGlow.addColorStop(1, "rgba(88,28,235,0)");
+      ctx.fillStyle = sideGlow;
+      ctx.fillRect(0, g.horizonY, 60, g.groundY - g.horizonY);
+      const sideGlow2 = ctx.createLinearGradient(cw, 0, cw - 60, 0);
+      sideGlow2.addColorStop(0, "rgba(88,28,235,0.15)");
+      sideGlow2.addColorStop(1, "rgba(88,28,235,0)");
+      ctx.fillStyle = sideGlow2;
+      ctx.fillRect(cw - 60, g.horizonY, 60, g.groundY - g.horizonY);
+
+      setHud(h => ({ ...h, distance: Math.floor(g.distance) }));
 
       animFrameRef.current = requestAnimationFrame(render);
     };
 
     animFrameRef.current = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animFrameRef.current);
-  }, [gameStarted, gameOver, spawnObstacle, triggerQuestion]);
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      window.removeEventListener("resize", resize);
+    };
+  }, [gameStarted, gameOver, processAnswer]);
+
+  // Activate power-up
+  const activatePowerUp = (type: string) => {
+    const g = gs.current;
+    const info = POWER_UP_INFO[type];
+    setActivePowerUp(type);
+    setTimeout(() => setActivePowerUp(null), 2000);
+
+    switch (type) {
+      case "freeze":
+        g.frozenTimer = 300; // 5 seconds
+        break;
+      case "fifty":
+        // Remove one wrong gate
+        const wrongGates = g.answerGates.filter(ga => !ga.isCorrect && !ga.passed);
+        if (wrongGates.length > 0) wrongGates[0].opacity = 0;
+        break;
+      case "shield":
+        g.hasShield = true;
+        break;
+      case "doubleXp":
+        g.doubleXpCount = 3;
+        break;
+      case "hint":
+        const correctGate = g.answerGates.find(ga => ga.isCorrect);
+        if (correctGate) g.hintLane = correctGate.lane;
+        break;
+    }
+
+    g.floatingTexts.push({
+      x: g.canvasW / 2, y: g.groundY - 120,
+      text: `${info.icon} ${info.name}!`, color: info.color, life: 2, vy: -1.5,
+    });
+    toast.success(`${info.icon} ${info.name} activated!`, { duration: 1500 });
+  };
+
+  // Spawn power-ups occasionally
+  const spawnPowerUp = useCallback(() => {
+    const g = gs.current;
+    const types = ["freeze", "fifty", "shield", "doubleXp", "hint"];
+    const type = types[Math.floor(Math.random() * types.length)];
+    g.powerUps.push({ z: 900, lane: Math.floor(Math.random() * 3), type: type as any, passed: false });
+  }, []);
 
   // Keyboard controls
   useEffect(() => {
     if (!gameStarted || gameOver) return;
-
     const handleKey = (e: KeyboardEvent) => {
-      if (isPausedRef.current) return;
-      const gs = gameStateRef.current;
-      if (e.key === "ArrowLeft" || e.key === "a") {
-        gs.targetLane = Math.max(0, gs.targetLane - 1);
-      } else if (e.key === "ArrowRight" || e.key === "d") {
-        gs.targetLane = Math.min(LANE_COUNT - 1, gs.targetLane + 1);
-      } else if ((e.key === "ArrowUp" || e.key === "w" || e.key === " ") && !gs.isJumping) {
-        gs.isJumping = true;
-        gs.jumpVelocity = -12;
+      const g = gs.current;
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+        g.targetLane = Math.max(0, g.targetLane - 1);
+        e.preventDefault();
+      } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+        g.targetLane = Math.min(2, g.targetLane + 1);
+        e.preventDefault();
       }
     };
-
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [gameStarted, gameOver]);
 
-  // Touch controls
-  const handleLaneClick = (lane: number) => {
-    if (isPausedRef.current || !gameStarted || gameOver) return;
-    gameStateRef.current.targetLane = lane;
-  };
+  // Touch/swipe controls
+  useEffect(() => {
+    if (!gameStarted || gameOver) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!touchStartRef.current) return;
+      const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+      const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+      const g = gs.current;
+      if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) g.targetLane = Math.max(0, g.targetLane - 1);
+        else g.targetLane = Math.min(2, g.targetLane + 1);
+      }
+      touchStartRef.current = null;
+    };
+
+    canvas.addEventListener("touchstart", onTouchStart, { passive: true });
+    canvas.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      canvas.removeEventListener("touchstart", onTouchStart);
+      canvas.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [gameStarted, gameOver]);
 
   const startGame = () => {
-    const gs = gameStateRef.current;
-    gs.playerLane = 1;
-    gs.targetLane = 1;
-    gs.playerX = getLaneX(1);
-    gs.playerY = GROUND_Y - PLAYER_SIZE;
-    gs.isJumping = false;
-    gs.jumpVelocity = 0;
-    gs.obstacles = [];
-    gs.particles = [];
-    gs.speed = 3;
-    gs.distance = 0;
-    gs.score = 0;
-    gs.lives = 3;
-    gs.streak = 0;
-    gs.maxStreak = 0;
-    gs.coins = 0;
-    gs.frameCount = 0;
-    gs.groundOffset = 0;
-    setDisplayScore(0);
-    setDisplayLives(3);
-    setDisplayStreak(0);
-    setDisplayCoins(0);
-    setDisplayDistance(0);
-    setQuestionIndex(0);
+    const g = gs.current;
+    g.playerLane = 1;
+    g.targetLane = 1;
+    g.playerX = g.canvasW / 2;
+    g.speed = config.speed;
+    g.distance = 0;
+    g.score = 0;
+    g.xp = 0;
+    g.lives = 3;
+    g.streak = 0;
+    g.maxStreak = 0;
+    g.frame = 0;
+    g.trackOffset = 0;
+    g.answerGates = [];
+    g.powerUps = [];
+    g.particles = [];
+    g.floatingTexts = [];
+    g.currentQuestionIdx = 0;
+    g.waitingForAnswer = false;
+    g.answered = false;
+    g.totalCorrect = 0;
+    g.totalAnswered = 0;
+    g.hasShield = false;
+    g.doubleXpCount = 0;
+    g.frozenTimer = 0;
+    g.hintLane = -1;
+    g.topicStats = {};
+    g.questionTimerMax = config.questionTime;
+
+    setHud({ score: 0, xp: 0, lives: 3, streak: 0, distance: 0, qNum: 0, qTotal: questions.length, topic: "" });
+    setFeedback(null);
     setGameOver(false);
-    setShowQuestion(false);
-    isPausedRef.current = false;
     setGameStarted(true);
+
+    // Start first question after brief delay
+    setTimeout(() => {
+      nextQuestion();
+      // Spawn power-up periodically
+      const interval = setInterval(() => {
+        if (gs.current.lives <= 0) { clearInterval(interval); return; }
+        if (Math.random() < 0.35) spawnPowerUp();
+      }, 8000);
+      return () => clearInterval(interval);
+    }, 1500);
   };
+
+  // ============ RENDER STATES ============
 
   if (loading) {
     return (
@@ -556,163 +867,293 @@ const RunAndRevise = ({ questionSetId, userId, onExit }: RunAndReviseProps) => {
         <Card className="p-8">
           <XCircle className="w-16 h-16 mx-auto text-destructive mb-4" />
           <h2 className="text-xl font-bold mb-2">No Questions Found</h2>
-          <p className="text-muted-foreground mb-4">Upload study material first to play Run & Revise.</p>
+          <p className="text-muted-foreground mb-4">Upload study material first to generate quiz questions.</p>
           <Button onClick={onExit}>Back to Game Zone</Button>
         </Card>
       </div>
     );
   }
 
+  // ============ GAME OVER SCREEN ============
   if (gameOver) {
     return (
-      <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-w-lg mx-auto">
-        <Card className="p-8 text-center space-y-6 bg-gradient-to-br from-violet-500/10 to-blue-500/10 border-violet-500/20">
-          <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
-            <Trophy className="w-20 h-20 mx-auto text-yellow-500" />
-          </motion.div>
-          <h2 className="text-3xl font-bold">Run Over!</h2>
-          <p className="text-muted-foreground">You ran {finalStats.distance}m! 🏃</p>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-card border">
-              <p className="text-2xl font-bold text-primary">{finalStats.score}</p>
-              <p className="text-sm text-muted-foreground">Score</p>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
+        <Card className="overflow-hidden border-0 shadow-2xl">
+          {/* Header gradient */}
+          <div className="bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 p-8 text-center text-white relative overflow-hidden">
+            <div className="absolute inset-0 opacity-20">
+              {[...Array(20)].map((_, i) => (
+                <div key={i} className="absolute rounded-full bg-white/20" style={{
+                  width: Math.random() * 6 + 2, height: Math.random() * 6 + 2,
+                  left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`,
+                }} />
+              ))}
             </div>
-            <div className="p-4 rounded-lg bg-card border">
-              <p className="text-2xl font-bold text-orange-500">{finalStats.maxStreak}🔥</p>
-              <p className="text-sm text-muted-foreground">Best Streak</p>
-            </div>
-            <div className="p-4 rounded-lg bg-card border">
-              <p className="text-2xl font-bold text-yellow-500">{finalStats.coins}</p>
-              <p className="text-sm text-muted-foreground">Coins</p>
-            </div>
-            <div className="p-4 rounded-lg bg-card border">
-              <p className="text-2xl font-bold text-green-500">{finalStats.distance}m</p>
-              <p className="text-sm text-muted-foreground">Distance</p>
-            </div>
+            <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 3 }}>
+              <Trophy className="w-16 h-16 mx-auto text-yellow-300 mb-3" />
+            </motion.div>
+            <h2 className="text-3xl font-bold mb-1">Run Complete!</h2>
+            <p className="text-white/70">Scholar Quest • {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Mode</p>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={startGame} size="lg" className="flex-1">Play Again</Button>
-            <Button onClick={onExit} variant="outline" size="lg" className="flex-1">Exit</Button>
+
+          <div className="p-6 space-y-6 bg-card">
+            {/* Main stats grid */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Score", value: finalStats.score.toLocaleString(), icon: "🏆", color: "text-yellow-500" },
+                { label: "XP Earned", value: `+${finalStats.xp}`, icon: "⚡", color: "text-blue-500" },
+                { label: "Accuracy", value: `${finalStats.accuracy}%`, icon: "🎯", color: finalStats.accuracy >= 70 ? "text-green-500" : "text-orange-500" },
+                { label: "Best Streak", value: `${finalStats.maxStreak}🔥`, icon: "", color: "text-orange-500" },
+                { label: "Answered", value: `${finalStats.totalCorrect}/${finalStats.totalAnswered}`, icon: "📝", color: "text-violet-500" },
+                { label: "Distance", value: `${Math.floor(gs.current.distance)}m`, icon: "🏃", color: "text-emerald-500" },
+              ].map((stat, i) => (
+                <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}>
+                  <div className="p-3 rounded-xl bg-muted/50 border text-center">
+                    <p className={`text-xl font-bold ${stat.color}`}>{stat.icon}{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Topic analysis */}
+            {(finalStats.weakTopics.length > 0 || finalStats.strongTopics.length > 0) && (
+              <div className="grid grid-cols-2 gap-3">
+                {finalStats.strongTopics.length > 0 && (
+                  <div className="p-3 rounded-xl border border-green-500/20 bg-green-500/5">
+                    <p className="text-xs font-semibold text-green-600 mb-2 flex items-center gap-1">
+                      <Target className="w-3 h-3" /> Strong Topics
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {finalStats.strongTopics.map(t => (
+                        <Badge key={t} variant="secondary" className="text-[10px] bg-green-500/10 text-green-700">{t}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {finalStats.weakTopics.length > 0 && (
+                  <div className="p-3 rounded-xl border border-orange-500/20 bg-orange-500/5">
+                    <p className="text-xs font-semibold text-orange-600 mb-2 flex items-center gap-1">
+                      <BarChart3 className="w-3 h-3" /> Needs Review
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {finalStats.weakTopics.map(t => (
+                        <Badge key={t} variant="secondary" className="text-[10px] bg-orange-500/10 text-orange-700">{t}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              <Button onClick={startGame} size="lg" className="flex-1 gap-2 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white">
+                <RotateCcw className="w-4 h-4" /> Play Again
+              </Button>
+              <Button onClick={onExit} variant="outline" size="lg" className="flex-1">
+                Back to Games
+              </Button>
+            </div>
           </div>
         </Card>
       </motion.div>
     );
   }
 
+  // ============ START SCREEN ============
   if (!gameStarted) {
     return (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-lg mx-auto">
-        <Card className="p-8 text-center space-y-6 bg-gradient-to-br from-violet-500/10 to-indigo-500/10 border-violet-500/20">
-          <div className="text-6xl">🏃‍♂️</div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
-            Run & Revise
-          </h2>
-          <p className="text-muted-foreground">
-            Run through an endless track! Hit question blocks to answer quiz questions.
-            Wrong answers cost lives. How far can you go?
-          </p>
-          <div className="grid grid-cols-3 gap-3 text-sm">
-            <div className="p-3 rounded-lg bg-card border">
-              <span className="text-lg">⬅️➡️</span>
-              <p className="text-muted-foreground mt-1">Switch lanes</p>
+        <Card className="overflow-hidden border-0 shadow-2xl">
+          <div className="bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 p-8 text-center text-white relative overflow-hidden">
+            <div className="absolute inset-0">
+              {[...Array(15)].map((_, i) => (
+                <motion.div key={i} className="absolute rounded-full bg-white/10"
+                  animate={{ y: [-20, -200], opacity: [0.5, 0] }}
+                  transition={{ repeat: Infinity, duration: 3 + Math.random() * 4, delay: Math.random() * 3 }}
+                  style={{ width: 4, height: 4, left: `${Math.random() * 100}%`, bottom: 0 }}
+                />
+              ))}
             </div>
-            <div className="p-3 rounded-lg bg-card border">
-              <span className="text-lg">⬆️</span>
-              <p className="text-muted-foreground mt-1">Jump</p>
-            </div>
-            <div className="p-3 rounded-lg bg-card border">
-              <span className="text-lg">❓</span>
-              <p className="text-muted-foreground mt-1">Answer to survive</p>
-            </div>
+            <div className="text-5xl mb-3">🏃‍♂️</div>
+            <h2 className="text-3xl font-bold mb-2">Scholar Quest</h2>
+            <p className="text-lg text-white/70">Run & Revise</p>
           </div>
-          <Button onClick={startGame} size="lg" className="w-full bg-gradient-to-r from-violet-500 to-blue-500 text-white hover:from-violet-600 hover:to-blue-600">
-            Start Running! 🚀
-          </Button>
-          <Button variant="ghost" onClick={onExit}>Back to Game Zone</Button>
+
+          <div className="p-6 space-y-5 bg-card">
+            <p className="text-sm text-muted-foreground text-center">
+              Run through the Knowledge City! Answer questions by switching to the correct lane.
+              Wrong answers cost lives. How far can you go?
+            </p>
+
+            <div className="flex items-center justify-center gap-2">
+              <Badge variant="outline" className="gap-1">📝 {questions.length} Questions</Badge>
+              <Badge style={{ backgroundColor: config.color + "22", color: config.color, borderColor: config.color + "44" }}>
+                {config.label} Mode
+              </Badge>
+            </div>
+
+            {/* Controls guide */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="p-3 rounded-lg bg-muted/50 border">
+                <ChevronLeft className="w-6 h-6 mx-auto text-muted-foreground" />
+                <p className="text-[10px] text-muted-foreground mt-1">A / ← Left</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50 border">
+                <div className="text-lg">🎯</div>
+                <p className="text-[10px] text-muted-foreground mt-1">Pick Correct Lane</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50 border">
+                <ChevronRight className="w-6 h-6 mx-auto text-muted-foreground" />
+                <p className="text-[10px] text-muted-foreground mt-1">D / → Right</p>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-muted-foreground text-center">📱 On mobile, swipe left/right to switch lanes</p>
+
+            <Button onClick={startGame} size="lg" className="w-full bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white text-lg h-12 gap-2">
+              <Zap className="w-5 h-5" /> Start Running!
+            </Button>
+            <Button variant="ghost" onClick={onExit} className="w-full text-muted-foreground">
+              Back to Game Zone
+            </Button>
+          </div>
         </Card>
       </motion.div>
     );
   }
 
+  // ============ ACTIVE GAME SCREEN ============
   return (
-    <div className="max-w-[650px] mx-auto space-y-4">
-      {/* HUD */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex gap-1">
-          {[...Array(3)].map((_, i) => (
-            <Heart key={i} className={`w-6 h-6 ${i < displayLives ? "text-red-500 fill-red-500" : "text-muted-foreground/20"}`} />
-          ))}
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <Badge variant="outline" className="gap-1">
-            <Zap className="w-3 h-3 text-orange-500" />{displayStreak}x
+    <div className="max-w-[900px] mx-auto space-y-3" ref={containerRef}>
+      {/* Question card at top */}
+      <AnimatePresence mode="wait">
+        {currentQ && (
+          <motion.div key={currentQ.id} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <Card className="p-3 md:p-4 border-violet-500/20 bg-card/95 backdrop-blur-sm relative overflow-hidden">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Badge variant="outline" className="text-[10px] shrink-0">Q{hud.qNum}/{hud.qTotal}</Badge>
+                    {hud.topic && <Badge variant="secondary" className="text-[10px] shrink-0">{hud.topic}</Badge>}
+                  </div>
+                  <p className="text-sm md:text-base font-medium leading-snug">{currentQ.question_text}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <div className="flex gap-0.5">
+                    {[...Array(3)].map((_, i) => (
+                      <Heart key={i} className={`w-4 h-4 ${i < hud.lives ? "text-red-500 fill-red-500" : "text-muted-foreground/20"}`} />
+                    ))}
+                  </div>
+                  {/* Timer bar */}
+                  <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-200"
+                      style={{
+                        width: `${(questionTimerDisplay / config.questionTime) * 100}%`,
+                        backgroundColor: questionTimerDisplay <= 3 ? "#ef4444" : questionTimerDisplay <= 7 ? "#eab308" : "#22c55e",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Lane labels */}
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {gs.current.answerGates.filter(g => g.opacity > 0).map((gate, i) => (
+                  <div key={i} className="text-[10px] text-center text-muted-foreground bg-muted/50 rounded px-1 py-0.5 truncate">
+                    <span className="font-bold text-violet-500">{["A", "B", "C"][gate.lane]}</span> · {gate.text}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* HUD bar */}
+      <div className="flex items-center justify-between px-1 text-sm">
+        <div className="flex items-center gap-2">
+          <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 gap-1">
+            <Zap className="w-3 h-3" /> {hud.streak}x
           </Badge>
-          <Badge variant="secondary" className="gap-1">🪙 {displayCoins}</Badge>
-          <Badge className="gap-1 bg-primary">{displayScore} pts</Badge>
-          <Badge variant="outline">{displayDistance}m</Badge>
+          <Badge variant="outline" className="gap-1 text-xs">⚡ {hud.xp} XP</Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="gap-1 text-xs">🏆 {hud.score}</Badge>
+          <Badge variant="outline" className="text-xs">{hud.distance}m</Badge>
         </div>
       </div>
 
       {/* Canvas */}
-      <div className="relative rounded-xl overflow-hidden border-2 border-violet-500/30 shadow-lg shadow-violet-500/10">
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_WIDTH}
-          height={CANVAS_HEIGHT}
-          className="w-full bg-black"
-          style={{ imageRendering: "pixelated" }}
-        />
+      <div className="relative rounded-xl overflow-hidden border border-violet-500/20 shadow-xl shadow-violet-500/5">
+        <canvas ref={canvasRef} className="w-full bg-black" style={{ aspectRatio: "16/10" }} />
 
-        {/* Question overlay */}
+        {/* Feedback overlay */}
         <AnimatePresence>
-          {showQuestion && currentQuestion && (
+          {feedback && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+              exit={{ opacity: 0 }}
+              className={`absolute inset-0 flex items-center justify-center pointer-events-none ${
+                feedback.type === "correct" ? "bg-green-500/10" : "bg-red-500/10"
+              }`}
             >
-              <div className="bg-card rounded-xl p-6 max-w-md w-full space-y-4 border border-violet-500/30">
-                <Badge variant="outline" className="mb-2">
-                  {currentQuestion.question_type === "mcq" ? "MCQ" : currentQuestion.question_type === "true_false" ? "True/False" : "Fill Blank"}
-                </Badge>
-                <h3 className="font-semibold text-base">{currentQuestion.question_text}</h3>
-                <div className="grid gap-2">
-                  {currentQuestion.options.map((opt, i) => (
-                    <Button
-                      key={i}
-                      variant="outline"
-                      className="w-full justify-start text-left h-auto py-3 px-4 hover:border-violet-500 hover:bg-violet-500/10"
-                      onClick={() => handleAnswer(opt)}
-                    >
-                      <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold mr-2 shrink-0">
-                        {String.fromCharCode(65 + i)}
-                      </span>
-                      {opt}
-                    </Button>
-                  ))}
-                </div>
+              <div className={`px-6 py-3 rounded-xl backdrop-blur-sm text-center ${
+                feedback.type === "correct"
+                  ? "bg-green-500/20 border border-green-500/30 text-green-300"
+                  : "bg-red-500/20 border border-red-500/30 text-red-300"
+              }`}>
+                <p className="text-lg font-bold">{feedback.type === "correct" ? "✓ Correct!" : "✗ Wrong!"}</p>
+                <p className="text-xs mt-1 opacity-80">{feedback.text}</p>
+                {feedback.explanation && (
+                  <p className="text-[10px] mt-1 opacity-60 max-w-xs">{feedback.explanation}</p>
+                )}
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Power-up notification */}
+        <AnimatePresence>
+          {activePowerUp && (
+            <motion.div
+              initial={{ y: -30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              className="absolute top-2 left-1/2 -translate-x-1/2"
+            >
+              <Badge className="text-sm px-3 py-1" style={{
+                backgroundColor: POWER_UP_INFO[activePowerUp]?.color + "33",
+                color: POWER_UP_INFO[activePowerUp]?.color,
+                borderColor: POWER_UP_INFO[activePowerUp]?.color + "55",
+              }}>
+                {POWER_UP_INFO[activePowerUp]?.icon} {POWER_UP_INFO[activePowerUp]?.name}!
+              </Badge>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Mobile lane controls */}
+      {/* Mobile controls */}
       <div className="grid grid-cols-3 gap-2 md:hidden">
-        {[0, 1, 2].map(lane => (
-          <Button
-            key={lane}
-            variant="outline"
-            className="h-14 text-lg border-violet-500/30"
-            onClick={() => handleLaneClick(lane)}
-          >
-            {lane === 0 ? "⬅️" : lane === 1 ? "⬆️" : "➡️"}
-          </Button>
-        ))}
+        <Button variant="outline" className="h-14 border-violet-500/20 active:bg-violet-500/10"
+          onTouchStart={() => { gs.current.targetLane = Math.max(0, gs.current.targetLane - 1); }}>
+          <ChevronLeft className="w-6 h-6" />
+        </Button>
+        <Button variant="outline" className="h-14 border-violet-500/20 text-muted-foreground text-xs">
+          Lane {gs.current.targetLane + 1}
+        </Button>
+        <Button variant="outline" className="h-14 border-violet-500/20 active:bg-violet-500/10"
+          onTouchStart={() => { gs.current.targetLane = Math.min(2, gs.current.targetLane + 1); }}>
+          <ChevronRight className="w-6 h-6" />
+        </Button>
       </div>
 
-      <Button variant="ghost" onClick={onExit} className="w-full">Exit Game</Button>
+      <Button variant="ghost" size="sm" onClick={() => { endGame(); }} className="w-full text-muted-foreground text-xs">
+        Exit Run
+      </Button>
     </div>
   );
 };
