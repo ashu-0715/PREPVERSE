@@ -853,10 +853,6 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
     }, 1500);
   };
 
-  // === Unused state alias for lint ===
-  const [displayScore, setDisplayScore] = useState(0);
-  const [displayLives, setDisplayLives] = useState(3);
-
   // ============ RENDER STATES ============
 
   if (loading) {
