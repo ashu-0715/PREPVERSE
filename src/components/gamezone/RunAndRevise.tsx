@@ -834,8 +834,6 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
     g.topicStats = {};
     g.questionTimerMax = config.questionTime;
 
-    setDisplayScore(0);
-    setDisplayLives(3);
     setHud({ score: 0, xp: 0, lives: 3, streak: 0, distance: 0, qNum: 0, qTotal: questions.length, topic: "" });
     setFeedback(null);
     setGameOver(false);
