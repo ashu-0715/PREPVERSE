@@ -26,6 +26,7 @@ const GameZone = () => {
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const [runnerDifficulty, setRunnerDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
