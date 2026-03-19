@@ -171,7 +171,8 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
     });
     g.waitingForAnswer = true;
     g.answered = false;
-    g.questionTimer = g.questionTimerMax * 60; // frames
+    g.pauseTimer = 5 * 60; // 5-second reading pause at 60fps
+    g.questionTimer = g.questionTimerMax * 60; // starts after pause
     g.hintLane = -1;
   }, []);
 
