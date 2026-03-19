@@ -109,7 +109,12 @@ Return ONLY a valid JSON array, no other text.`;
       let cleaned = aiContent.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "").trim();
       const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("No JSON array found in: " + cleaned.substring(0, 200));
-      questions = JSON.parse(jsonMatch[0]);
+      // Remove control characters that break JSON.parse
+      const sanitized = jsonMatch[0].replace(/[\x00-\x1F\x7F]/g, (ch: string) => {
+        if (ch === '\n' || ch === '\r' || ch === '\t') return ch;
+        return '';
+      });
+      questions = JSON.parse(sanitized);
       if (!Array.isArray(questions) || questions.length === 0) {
         throw new Error("Parsed result is not a valid question array");
       }
