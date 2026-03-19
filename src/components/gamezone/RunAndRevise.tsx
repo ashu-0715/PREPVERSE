@@ -346,32 +346,38 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
       const ch = g.canvasH;
 
       g.frame++;
-      g.trackOffset = (g.trackOffset + g.speed * 2) % 60;
 
-      // Slow movement if frozen
-      const effectiveSpeed = g.frozenTimer > 0 ? g.speed * 0.3 : g.speed;
-      if (g.frozenTimer > 0) g.frozenTimer--;
+      // Check if paused for reading time
+      const isPaused = g.pauseTimer > 0;
+      if (isPaused) {
+        g.pauseTimer--;
+        setQuestionTimerDisplay(Math.ceil(g.pauseTimer / 60));
+      }
+
+      g.trackOffset = (g.trackOffset + (isPaused ? 0 : g.speed * 2)) % 60;
+
+      // Movement stops during pause; slow if frozen
+      const effectiveSpeed = isPaused ? 0 : (g.frozenTimer > 0 ? g.speed * 0.3 : g.speed);
+      if (!isPaused && g.frozenTimer > 0) g.frozenTimer--;
       g.distance += effectiveSpeed * 0.1;
 
-      // Lane smoothing
+      // Lane smoothing (allow switching lanes even during pause)
       const laneWidth = cw * 0.22;
       const cx = cw / 2;
       const targetX = cx + (g.targetLane - 1) * laneWidth;
       g.playerX += (targetX - g.playerX) * 0.12;
       g.playerLane = g.targetLane;
 
-      // Move answer gates toward player
-      if (g.waitingForAnswer && !g.answered) {
+      // Move answer gates toward player (only after pause ends)
+      if (g.waitingForAnswer && !g.answered && !isPaused) {
         g.questionTimer--;
         setQuestionTimerDisplay(Math.max(0, Math.ceil(g.questionTimer / 60)));
-        // Auto-fail on timeout
         if (g.questionTimer <= 0) {
           processAnswer("__timeout__");
         }
 
         g.answerGates.forEach(gate => {
           gate.z -= effectiveSpeed * 3;
-          // When gate reaches player (z near 0), select based on player lane
           if (!gate.passed && gate.z <= 30) {
             gate.passed = true;
             if (gate.lane === g.targetLane) {
@@ -380,9 +386,7 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
           }
         });
 
-        // If all gates passed without selection (shouldn't happen with 3 lanes)
         if (g.answerGates.every(ga => ga.passed) && !g.answered) {
-          // Player was in a lane with a gate, already handled above
         }
       }
 
