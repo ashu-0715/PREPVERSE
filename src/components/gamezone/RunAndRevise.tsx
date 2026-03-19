@@ -709,6 +709,34 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
       ctx.fillStyle = sideGlow2;
       ctx.fillRect(cw - 60, g.horizonY, 60, g.groundY - g.horizonY);
 
+      // "READ & THINK" overlay during pause
+      if (isPaused) {
+        ctx.fillStyle = "rgba(5,2,20,0.35)";
+        ctx.fillRect(0, 0, cw, ch);
+
+        const pauseSec = Math.ceil(g.pauseTimer / 60);
+        ctx.textAlign = "center";
+
+        // Pulsing glow
+        const pulse = 0.7 + Math.sin(g.frame * 0.08) * 0.3;
+        ctx.shadowColor = "rgba(139,92,246,0.8)";
+        ctx.shadowBlur = 20 * pulse;
+
+        ctx.font = `bold ${Math.floor(cw * 0.035)}px system-ui, sans-serif`;
+        ctx.fillStyle = `rgba(167,139,250,${pulse})`;
+        ctx.fillText("📖 READ & THINK", cx, ch * 0.42);
+
+        ctx.font = `bold ${Math.floor(cw * 0.07)}px system-ui, sans-serif`;
+        ctx.fillStyle = `rgba(255,255,255,${pulse})`;
+        ctx.fillText(`${pauseSec}`, cx, ch * 0.55);
+
+        ctx.font = `${Math.floor(cw * 0.018)}px system-ui, sans-serif`;
+        ctx.fillStyle = "rgba(200,200,255,0.5)";
+        ctx.fillText("Choose your lane now — running resumes soon!", cx, ch * 0.62);
+
+        ctx.shadowBlur = 0;
+      }
+
       setHud(h => ({ ...h, distance: Math.floor(g.distance) }));
 
       animFrameRef.current = requestAnimationFrame(render);
