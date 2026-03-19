@@ -837,6 +837,7 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
     g.doubleXpCount = 0;
     g.frozenTimer = 0;
     g.hintLane = -1;
+    g.pauseTimer = 0;
     g.topicStats = {};
     g.questionTimerMax = config.questionTime;
 
