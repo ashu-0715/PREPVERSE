@@ -148,16 +148,27 @@ Return ONLY a valid JSON array, no other text.`;
       .update({ total_questions: questions.length, topics })
       .eq("id", questionSet.id);
 
-    // Update user game stats
-    await supabase.rpc("upsert_game_stats_upload", { p_user_id: user.id }).catch(() => {
-      // If RPC doesn't exist, do manual upsert
-      return supabase
+    // Update user game stats - manual upsert
+    try {
+      const { data: existingStats } = await supabase
         .from("user_game_stats")
-        .upsert(
-          { user_id: user.id, materials_uploaded: 1 },
-          { onConflict: "user_id" }
-        );
-    });
+        .select("id, materials_uploaded")
+        .eq("user_id", user.id)
+        .single();
+
+      if (existingStats) {
+        await supabase
+          .from("user_game_stats")
+          .update({ materials_uploaded: (existingStats.materials_uploaded || 0) + 1 })
+          .eq("user_id", user.id);
+      } else {
+        await supabase
+          .from("user_game_stats")
+          .insert({ user_id: user.id, materials_uploaded: 1 });
+      }
+    } catch (_e) {
+      // Non-critical, ignore
+    }
 
     return new Response(JSON.stringify({
       questionSet: questionSet,
