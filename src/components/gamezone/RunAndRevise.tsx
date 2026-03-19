@@ -109,6 +109,7 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
     doubleXpCount: 0,
     frozenTimer: 0,
     hintLane: -1,
+    pauseTimer: 0,
     topicStats: {} as Record<string, TopicStat>,
     canvasW: 800,
     canvasH: 500,
