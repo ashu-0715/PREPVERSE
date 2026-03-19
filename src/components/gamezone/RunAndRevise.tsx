@@ -109,6 +109,7 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
     doubleXpCount: 0,
     frozenTimer: 0,
     hintLane: -1,
+    pauseTimer: 0,
     topicStats: {} as Record<string, TopicStat>,
     canvasW: 800,
     canvasH: 500,
@@ -170,7 +171,8 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
     });
     g.waitingForAnswer = true;
     g.answered = false;
-    g.questionTimer = g.questionTimerMax * 60; // frames
+    g.pauseTimer = 5 * 60; // 5-second reading pause at 60fps
+    g.questionTimer = g.questionTimerMax * 60; // starts after pause
     g.hintLane = -1;
   }, []);
 
@@ -344,32 +346,38 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
       const ch = g.canvasH;
 
       g.frame++;
-      g.trackOffset = (g.trackOffset + g.speed * 2) % 60;
 
-      // Slow movement if frozen
-      const effectiveSpeed = g.frozenTimer > 0 ? g.speed * 0.3 : g.speed;
-      if (g.frozenTimer > 0) g.frozenTimer--;
+      // Check if paused for reading time
+      const isPaused = g.pauseTimer > 0;
+      if (isPaused) {
+        g.pauseTimer--;
+        setQuestionTimerDisplay(Math.ceil(g.pauseTimer / 60));
+      }
+
+      g.trackOffset = (g.trackOffset + (isPaused ? 0 : g.speed * 2)) % 60;
+
+      // Movement stops during pause; slow if frozen
+      const effectiveSpeed = isPaused ? 0 : (g.frozenTimer > 0 ? g.speed * 0.3 : g.speed);
+      if (!isPaused && g.frozenTimer > 0) g.frozenTimer--;
       g.distance += effectiveSpeed * 0.1;
 
-      // Lane smoothing
+      // Lane smoothing (allow switching lanes even during pause)
       const laneWidth = cw * 0.22;
       const cx = cw / 2;
       const targetX = cx + (g.targetLane - 1) * laneWidth;
       g.playerX += (targetX - g.playerX) * 0.12;
       g.playerLane = g.targetLane;
 
-      // Move answer gates toward player
-      if (g.waitingForAnswer && !g.answered) {
+      // Move answer gates toward player (only after pause ends)
+      if (g.waitingForAnswer && !g.answered && !isPaused) {
         g.questionTimer--;
         setQuestionTimerDisplay(Math.max(0, Math.ceil(g.questionTimer / 60)));
-        // Auto-fail on timeout
         if (g.questionTimer <= 0) {
           processAnswer("__timeout__");
         }
 
         g.answerGates.forEach(gate => {
           gate.z -= effectiveSpeed * 3;
-          // When gate reaches player (z near 0), select based on player lane
           if (!gate.passed && gate.z <= 30) {
             gate.passed = true;
             if (gate.lane === g.targetLane) {
@@ -378,9 +386,7 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
           }
         });
 
-        // If all gates passed without selection (shouldn't happen with 3 lanes)
         if (g.answerGates.every(ga => ga.passed) && !g.answered) {
-          // Player was in a lane with a gate, already handled above
         }
       }
 
@@ -703,6 +709,34 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
       ctx.fillStyle = sideGlow2;
       ctx.fillRect(cw - 60, g.horizonY, 60, g.groundY - g.horizonY);
 
+      // "READ & THINK" overlay during pause
+      if (isPaused) {
+        ctx.fillStyle = "rgba(5,2,20,0.35)";
+        ctx.fillRect(0, 0, cw, ch);
+
+        const pauseSec = Math.ceil(g.pauseTimer / 60);
+        ctx.textAlign = "center";
+
+        // Pulsing glow
+        const pulse = 0.7 + Math.sin(g.frame * 0.08) * 0.3;
+        ctx.shadowColor = "rgba(139,92,246,0.8)";
+        ctx.shadowBlur = 20 * pulse;
+
+        ctx.font = `bold ${Math.floor(cw * 0.035)}px system-ui, sans-serif`;
+        ctx.fillStyle = `rgba(167,139,250,${pulse})`;
+        ctx.fillText("📖 READ & THINK", cx, ch * 0.42);
+
+        ctx.font = `bold ${Math.floor(cw * 0.07)}px system-ui, sans-serif`;
+        ctx.fillStyle = `rgba(255,255,255,${pulse})`;
+        ctx.fillText(`${pauseSec}`, cx, ch * 0.55);
+
+        ctx.font = `${Math.floor(cw * 0.018)}px system-ui, sans-serif`;
+        ctx.fillStyle = "rgba(200,200,255,0.5)";
+        ctx.fillText("Choose your lane now — running resumes soon!", cx, ch * 0.62);
+
+        ctx.shadowBlur = 0;
+      }
+
       setHud(h => ({ ...h, distance: Math.floor(g.distance) }));
 
       animFrameRef.current = requestAnimationFrame(render);
@@ -831,6 +865,7 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
     g.doubleXpCount = 0;
     g.frozenTimer = 0;
     g.hintLane = -1;
+    g.pauseTimer = 0;
     g.topicStats = {};
     g.questionTimerMax = config.questionTime;
 
