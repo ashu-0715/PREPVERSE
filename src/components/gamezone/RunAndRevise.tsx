@@ -1026,89 +1026,125 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
 
   // ============ ACTIVE GAME SCREEN ============
   return (
-    <div className="max-w-[900px] mx-auto space-y-3" ref={containerRef}>
-      {/* Question card at top */}
+    <div className="max-w-[900px] mx-auto space-y-0" ref={containerRef}>
+      {/* Cinematic top bar with score/xp/streak */}
+      <div className="relative rounded-t-2xl overflow-hidden bg-gradient-to-r from-[#0f0524] via-[#1a0a3e] to-[#0f0524] border border-b-0 border-purple-500/20 px-3 py-2">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.15),transparent_70%)]" />
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+              <span className="text-amber-400 text-xs font-bold">🔥</span>
+              <span className="text-amber-300 text-xs font-bold">{hud.streak}x</span>
+            </div>
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+              <Zap className="w-3 h-3 text-cyan-400" />
+              <span className="text-cyan-300 text-xs font-bold">{hud.xp} XP</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {[...Array(3)].map((_, i) => (
+              <Heart key={i} className={`w-5 h-5 transition-all duration-300 ${
+                i < hud.lives 
+                  ? "text-rose-500 fill-rose-500 drop-shadow-[0_0_6px_rgba(244,63,94,0.6)]" 
+                  : "text-gray-700/40"
+              }`} />
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/30">
+              <Trophy className="w-3 h-3 text-violet-400" />
+              <span className="text-violet-300 text-xs font-bold">{hud.score.toLocaleString()}</span>
+            </div>
+            <div className="px-2 py-1 rounded-full bg-white/5 border border-white/10">
+              <span className="text-white/50 text-[10px] font-mono">{hud.distance}m</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Question card - glassmorphism style */}
       <AnimatePresence mode="wait">
         {currentQ && (
           <motion.div key={currentQ.id} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <Card className="p-3 md:p-4 border-violet-500/20 bg-card/95 backdrop-blur-sm relative overflow-hidden">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Badge variant="outline" className="text-[10px] shrink-0">Q{hud.qNum}/{hud.qTotal}</Badge>
-                    {hud.topic && <Badge variant="secondary" className="text-[10px] shrink-0">{hud.topic}</Badge>}
+            <div className="relative bg-gradient-to-b from-[#1a0a3e] to-[#120830] border-x border-purple-500/20 px-4 py-3">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.08),transparent_70%)]" />
+              <div className="relative">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 text-[10px] font-bold border border-purple-500/30">
+                        Q{hud.qNum}/{hud.qTotal}
+                      </span>
+                      {hud.topic && (
+                        <span className="px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 text-[10px] font-medium border border-cyan-500/20">
+                          {hud.topic}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm md:text-base font-semibold text-white/90 leading-relaxed">{currentQ.question_text}</p>
                   </div>
-                  <p className="text-sm md:text-base font-medium leading-snug">{currentQ.question_text}</p>
+                  {/* Timer circle */}
+                  <div className="shrink-0 relative w-12 h-12 flex items-center justify-center">
+                    <svg className="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" />
+                      <circle cx="18" cy="18" r="15" fill="none"
+                        stroke={questionTimerDisplay <= 3 ? "#ef4444" : questionTimerDisplay <= 7 ? "#eab308" : "#22c55e"}
+                        strokeWidth="2.5" strokeLinecap="round"
+                        strokeDasharray={`${(questionTimerDisplay / config.questionTime) * 94.25} 94.25`}
+                        className="transition-all duration-300"
+                      />
+                    </svg>
+                    <span className={`absolute text-sm font-bold ${
+                      questionTimerDisplay <= 3 ? "text-red-400" : questionTimerDisplay <= 7 ? "text-yellow-400" : "text-green-400"
+                    }`}>{questionTimerDisplay}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <div className="flex gap-0.5">
-                    {[...Array(3)].map((_, i) => (
-                      <Heart key={i} className={`w-4 h-4 ${i < hud.lives ? "text-red-500 fill-red-500" : "text-muted-foreground/20"}`} />
-                    ))}
-                  </div>
-                  {/* Timer bar */}
-                  <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-200"
-                      style={{
-                        width: `${(questionTimerDisplay / config.questionTime) * 100}%`,
-                        backgroundColor: questionTimerDisplay <= 3 ? "#ef4444" : questionTimerDisplay <= 7 ? "#eab308" : "#22c55e",
-                      }}
-                    />
-                  </div>
+                {/* Answer lane labels */}
+                <div className="grid grid-cols-3 gap-1.5 mt-2.5">
+                  {gs.current.answerGates.filter(g => g.opacity > 0).map((gate, i) => (
+                    <div key={i} className="group relative text-[10px] text-center text-white/60 bg-white/5 rounded-lg px-2 py-1.5 border border-white/10 truncate backdrop-blur-sm hover:bg-white/10 transition-colors">
+                      <span className="font-bold text-purple-400 mr-1">{["A", "B", "C"][gate.lane]}</span>
+                      <span className="text-white/70">{gate.text}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-              {/* Lane labels */}
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {gs.current.answerGates.filter(g => g.opacity > 0).map((gate, i) => (
-                  <div key={i} className="text-[10px] text-center text-muted-foreground bg-muted/50 rounded px-1 py-0.5 truncate">
-                    <span className="font-bold text-violet-500">{["A", "B", "C"][gate.lane]}</span> · {gate.text}
-                  </div>
-                ))}
-              </div>
-            </Card>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* HUD bar */}
-      <div className="flex items-center justify-between px-1 text-sm">
-        <div className="flex items-center gap-2">
-          <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 gap-1">
-            <Zap className="w-3 h-3" /> {hud.streak}x
-          </Badge>
-          <Badge variant="outline" className="gap-1 text-xs">⚡ {hud.xp} XP</Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="gap-1 text-xs">🏆 {hud.score}</Badge>
-          <Badge variant="outline" className="text-xs">{hud.distance}m</Badge>
-        </div>
-      </div>
+      {/* Canvas with enhanced border effects */}
+      <div className="relative overflow-hidden border-x border-purple-500/20">
+        {/* Top edge glow */}
+        <div className="absolute top-0 inset-x-0 h-8 bg-gradient-to-b from-[#120830]/80 to-transparent z-10 pointer-events-none" />
+        <canvas ref={canvasRef} className="w-full" style={{ aspectRatio: "16/10", display: "block" }} />
 
-      {/* Canvas */}
-      <div className="relative rounded-xl overflow-hidden border border-violet-500/20 shadow-xl shadow-violet-500/5">
-        <canvas ref={canvasRef} className="w-full bg-black" style={{ aspectRatio: "16/10" }} />
+        {/* Bottom vignette */}
+        <div className="absolute bottom-0 inset-x-0 h-12 bg-gradient-to-t from-[#0a0418] to-transparent pointer-events-none" />
 
         {/* Feedback overlay */}
         <AnimatePresence>
           {feedback && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
               className={`absolute inset-0 flex items-center justify-center pointer-events-none ${
-                feedback.type === "correct" ? "bg-green-500/10" : "bg-red-500/10"
+                feedback.type === "correct" ? "bg-green-500/5" : "bg-red-500/5"
               }`}
             >
-              <div className={`px-6 py-3 rounded-xl backdrop-blur-sm text-center ${
+              <div className={`px-8 py-4 rounded-2xl backdrop-blur-md text-center shadow-2xl ${
                 feedback.type === "correct"
-                  ? "bg-green-500/20 border border-green-500/30 text-green-300"
-                  : "bg-red-500/20 border border-red-500/30 text-red-300"
+                  ? "bg-green-500/15 border-2 border-green-400/40 shadow-green-500/20"
+                  : "bg-red-500/15 border-2 border-red-400/40 shadow-red-500/20"
               }`}>
-                <p className="text-lg font-bold">{feedback.type === "correct" ? "✓ Correct!" : "✗ Wrong!"}</p>
-                <p className="text-xs mt-1 opacity-80">{feedback.text}</p>
+                <p className={`text-2xl font-extrabold ${feedback.type === "correct" ? "text-green-300" : "text-red-300"}`}>
+                  {feedback.type === "correct" ? "✓ Correct!" : "✗ Wrong!"}
+                </p>
+                <p className="text-sm mt-1.5 text-white/70">{feedback.text}</p>
                 {feedback.explanation && (
-                  <p className="text-[10px] mt-1 opacity-60 max-w-xs">{feedback.explanation}</p>
+                  <p className="text-xs mt-1.5 text-white/40 max-w-sm">{feedback.explanation}</p>
                 )}
               </div>
             </motion.div>
@@ -1119,41 +1155,56 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
         <AnimatePresence>
           {activePowerUp && (
             <motion.div
-              initial={{ y: -30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -20, opacity: 0 }}
-              className="absolute top-2 left-1/2 -translate-x-1/2"
+              initial={{ y: -40, opacity: 0, scale: 0.8 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: -30, opacity: 0 }}
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-20"
             >
-              <Badge className="text-sm px-3 py-1" style={{
-                backgroundColor: POWER_UP_INFO[activePowerUp]?.color + "33",
+              <div className="px-4 py-2 rounded-full backdrop-blur-md text-sm font-bold shadow-lg" style={{
+                background: `linear-gradient(135deg, ${POWER_UP_INFO[activePowerUp]?.color}22, ${POWER_UP_INFO[activePowerUp]?.color}11)`,
                 color: POWER_UP_INFO[activePowerUp]?.color,
-                borderColor: POWER_UP_INFO[activePowerUp]?.color + "55",
+                borderWidth: 1,
+                borderColor: POWER_UP_INFO[activePowerUp]?.color + "44",
+                boxShadow: `0 0 20px ${POWER_UP_INFO[activePowerUp]?.color}33`,
               }}>
                 {POWER_UP_INFO[activePowerUp]?.icon} {POWER_UP_INFO[activePowerUp]?.name}!
-              </Badge>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Mobile controls */}
-      <div className="grid grid-cols-3 gap-2 md:hidden">
-        <Button variant="outline" className="h-14 border-violet-500/20 active:bg-violet-500/10"
-          onTouchStart={() => { gs.current.targetLane = Math.max(0, gs.current.targetLane - 1); }}>
-          <ChevronLeft className="w-6 h-6" />
-        </Button>
-        <Button variant="outline" className="h-14 border-violet-500/20 text-muted-foreground text-xs">
-          Lane {gs.current.targetLane + 1}
-        </Button>
-        <Button variant="outline" className="h-14 border-violet-500/20 active:bg-violet-500/10"
-          onTouchStart={() => { gs.current.targetLane = Math.min(2, gs.current.targetLane + 1); }}>
-          <ChevronRight className="w-6 h-6" />
+      {/* Bottom bar with mobile controls */}
+      <div className="rounded-b-2xl overflow-hidden bg-gradient-to-b from-[#0a0418] to-[#0f0524] border border-t-0 border-purple-500/20 p-2">
+        {/* Mobile controls */}
+        <div className="grid grid-cols-3 gap-2 md:hidden mb-2">
+          <Button
+            variant="ghost"
+            className="h-14 rounded-xl bg-gradient-to-br from-purple-500/10 to-violet-500/10 border border-purple-500/20 active:from-purple-500/30 active:to-violet-500/30 transition-all"
+            onTouchStart={() => { gs.current.targetLane = Math.max(0, gs.current.targetLane - 1); }}
+          >
+            <ChevronLeft className="w-7 h-7 text-purple-300" />
+          </Button>
+          <div className="h-14 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-[10px] text-white/30 uppercase tracking-wider">Lane</p>
+              <p className="text-lg font-bold text-purple-300">{gs.current.targetLane + 1}</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            className="h-14 rounded-xl bg-gradient-to-br from-purple-500/10 to-violet-500/10 border border-purple-500/20 active:from-purple-500/30 active:to-violet-500/30 transition-all"
+            onTouchStart={() => { gs.current.targetLane = Math.min(2, gs.current.targetLane + 1); }}
+          >
+            <ChevronRight className="w-7 h-7 text-purple-300" />
+          </Button>
+        </div>
+
+        <Button variant="ghost" size="sm" onClick={() => { endGame(); }}
+          className="w-full text-white/30 hover:text-white/60 text-[10px] uppercase tracking-widest h-7">
+          ⏹ Exit Run
         </Button>
       </div>
-
-      <Button variant="ghost" size="sm" onClick={() => { endGame(); }} className="w-full text-muted-foreground text-xs">
-        Exit Run
-      </Button>
     </div>
   );
 };
