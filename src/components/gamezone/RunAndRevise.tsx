@@ -17,6 +17,7 @@ interface RunAndReviseProps {
   userId: string;
   onExit: () => void;
   difficulty?: "easy" | "medium" | "hard";
+  topics?: string[];
 }
 
 interface AnswerGate {

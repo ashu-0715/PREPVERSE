@@ -13,9 +13,10 @@ interface SurvivalModeProps {
   questionSetId: string;
   onExit: () => void;
   userId: string;
+  topics?: string[];
 }
 
-const SurvivalMode = ({ questionSetId, onExit, userId }: SurvivalModeProps) => {
+const SurvivalMode = ({ questionSetId, onExit, userId, topics }: SurvivalModeProps) => {
   const [questions, setQuestions] = useState<GameQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lives, setLives] = useState(3);
