@@ -146,7 +146,8 @@ const GameZone = () => {
         <SurvivalMode
           questionSetId={selectedSetId}
           userId={userId}
-          onExit={() => { setActiveGame(null); setSelectedSetId(null); }}
+          topics={selectedTopics}
+          onExit={() => { setActiveGame(null); setSelectedSetId(null); setSelectedTopics(undefined); }}
         />
       </div>
     );
@@ -172,7 +173,12 @@ const GameZone = () => {
           questionSetId={selectedSetId}
           userId={userId}
           difficulty={runnerDifficulty}
-          onExit={() => { setActiveGame(null); setSelectedSetId(null); }}
+          topics={selectedTopics}
+          onExit={() => { setActiveGame(null); setSelectedSetId(null); setSelectedTopics(undefined); }}
+        />
+      </div>
+    );
+  }
         />
       </div>
     );
