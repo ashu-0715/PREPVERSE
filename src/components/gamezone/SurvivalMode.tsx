@@ -36,8 +36,11 @@ const SurvivalMode = ({ questionSetId, onExit, userId, topics }: SurvivalModePro
         .select("*")
         .eq("question_set_id", questionSetId);
       if (data) {
-        // Shuffle questions
-        const shuffled = (data as unknown as GameQuestion[]).sort(() => Math.random() - 0.5);
+        let filtered = data as unknown as GameQuestion[];
+        if (topics && topics.length > 0) {
+          filtered = filtered.filter(q => q.topic && topics.includes(q.topic));
+        }
+        const shuffled = filtered.sort(() => Math.random() - 0.5);
         setQuestions(shuffled);
       }
       setLoading(false);
