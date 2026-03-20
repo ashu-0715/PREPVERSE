@@ -123,7 +123,7 @@ Return ONLY a valid JSON array, no other text.`;
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Generate quiz questions from this study material:\n\n${content.substring(0, 15000)}` },
+          { role: "user", content: `Deeply analyze this study material. First identify all key concepts, topics, definitions, relationships, and important principles. Then generate ${questionCount} high-quality quiz questions based on your analysis. Prioritize conceptual understanding over rote memorization.\n\nSTUDY MATERIAL:\n\n${content.substring(0, 15000)}` },
         ],
       }),
     });
