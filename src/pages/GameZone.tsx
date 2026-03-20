@@ -233,9 +233,10 @@ const GameZone = () => {
                           return;
                         }
                         if (mode.needsSet) {
-                          setSelectedSetId(questionSets[0].id);
+                          setPendingGame(mode.id);
+                        } else {
+                          setActiveGame(mode.id);
                         }
-                        setActiveGame(mode.id);
                       }}
                     >
                       <div className={`bg-gradient-to-br ${mode.color} p-6 text-white`}>
