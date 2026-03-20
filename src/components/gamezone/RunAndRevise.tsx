@@ -141,7 +141,11 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium", to
     const fetch = async () => {
       const { data } = await supabase.from("game_questions").select("*").eq("question_set_id", questionSetId);
       if (data && data.length > 0) {
-        setQuestions((data as unknown as GameQuestion[]).sort(() => Math.random() - 0.5));
+        let filtered = data as unknown as GameQuestion[];
+        if (topics && topics.length > 0) {
+          filtered = filtered.filter(q => q.topic && topics.includes(q.topic));
+        }
+        setQuestions(filtered.sort(() => Math.random() - 0.5));
       }
       setLoading(false);
     };
