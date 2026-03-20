@@ -79,6 +79,36 @@ const GameZone = () => {
     }
   };
 
+  const gameModes = [
+    {
+      id: "battle",
+      title: "Quiz Battle",
+      description: "Challenge friends in real-time quiz battles",
+      icon: Swords,
+      color: "from-orange-500 to-red-500",
+      badge: "Multiplayer",
+      needsSet: false,
+    },
+    {
+      id: "survival",
+      title: "Survival Mode",
+      description: "Answer questions until you run out of lives",
+      icon: Shield,
+      color: "from-green-500 to-emerald-500",
+      badge: "Solo",
+      needsSet: true,
+    },
+    {
+      id: "runner",
+      title: "Run & Revise",
+      description: "Temple Run-style endless runner with quiz questions!",
+      icon: PersonStanding,
+      color: "from-violet-500 to-indigo-500",
+      badge: "Solo",
+      needsSet: true,
+    },
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
