@@ -89,6 +89,24 @@ const GameZone = () => {
 
   if (!userId) return null;
 
+  // Note selection screen for modes that need a question set
+  if (pendingGame && !selectedSetId) {
+    const modeInfo = gameModes.find(m => m.id === pendingGame);
+    return (
+      <NoteSelector
+        questionSets={questionSets}
+        gameMode={pendingGame}
+        gameTitle={modeInfo?.title || "Game"}
+        onSelect={(setId) => {
+          setSelectedSetId(setId);
+          setActiveGame(pendingGame);
+          setPendingGame(null);
+        }}
+        onBack={() => setPendingGame(null)}
+      />
+    );
+  }
+
   // Active game modes
   if (activeGame === "survival" && selectedSetId) {
     return (
