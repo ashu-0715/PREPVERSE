@@ -12,6 +12,7 @@ import SurvivalMode from "@/components/gamezone/SurvivalMode";
 import QuizBattle from "@/components/gamezone/QuizBattle";
 import RunAndRevise from "@/components/gamezone/RunAndRevise";
 import GameDashboard from "@/components/gamezone/GameDashboard";
+import NoteSelector from "@/components/gamezone/NoteSelector";
 import { motion } from "framer-motion";
 import {
   Gamepad2, ArrowLeft, Swords, Shield, Upload, Trophy,
@@ -24,6 +25,7 @@ const GameZone = () => {
   const [userName, setUserName] = useState("Player");
   const [questionSets, setQuestionSets] = useState<QuestionSet[]>([]);
   const [activeGame, setActiveGame] = useState<string | null>(null);
+  const [pendingGame, setPendingGame] = useState<string | null>(null);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const [runnerDifficulty, setRunnerDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [loading, setLoading] = useState(true);
@@ -77,6 +79,36 @@ const GameZone = () => {
     }
   };
 
+  const gameModes = [
+    {
+      id: "battle",
+      title: "Quiz Battle",
+      description: "Challenge friends in real-time quiz battles",
+      icon: Swords,
+      color: "from-orange-500 to-red-500",
+      badge: "Multiplayer",
+      needsSet: false,
+    },
+    {
+      id: "survival",
+      title: "Survival Mode",
+      description: "Answer questions until you run out of lives",
+      icon: Shield,
+      color: "from-green-500 to-emerald-500",
+      badge: "Solo",
+      needsSet: true,
+    },
+    {
+      id: "runner",
+      title: "Run & Revise",
+      description: "Temple Run-style endless runner with quiz questions!",
+      icon: PersonStanding,
+      color: "from-violet-500 to-indigo-500",
+      badge: "Solo",
+      needsSet: true,
+    },
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -86,6 +118,24 @@ const GameZone = () => {
   }
 
   if (!userId) return null;
+
+  // Note selection screen for modes that need a question set
+  if (pendingGame && !selectedSetId) {
+    const modeInfo = gameModes.find(m => m.id === pendingGame);
+    return (
+      <NoteSelector
+        questionSets={questionSets}
+        gameMode={pendingGame}
+        gameTitle={modeInfo?.title || "Game"}
+        onSelect={(setId) => {
+          setSelectedSetId(setId);
+          setActiveGame(pendingGame);
+          setPendingGame(null);
+        }}
+        onBack={() => setPendingGame(null)}
+      />
+    );
+  }
 
   // Active game modes
   if (activeGame === "survival" && selectedSetId) {
@@ -126,35 +176,7 @@ const GameZone = () => {
     );
   }
 
-  const gameModes = [
-    {
-      id: "battle",
-      title: "Quiz Battle",
-      description: "Challenge friends in real-time quiz battles",
-      icon: Swords,
-      color: "from-orange-500 to-red-500",
-      badge: "Multiplayer",
-      needsSet: false,
-    },
-    {
-      id: "survival",
-      title: "Survival Mode",
-      description: "Answer questions until you run out of lives",
-      icon: Shield,
-      color: "from-green-500 to-emerald-500",
-      badge: "Solo",
-      needsSet: true,
-    },
-    {
-      id: "runner",
-      title: "Run & Revise",
-      description: "Temple Run-style endless runner with quiz questions!",
-      icon: PersonStanding,
-      color: "from-violet-500 to-indigo-500",
-      badge: "Solo",
-      needsSet: true,
-    },
-  ];
+  // gameModes moved above early returns
 
   return (
     <div className="min-h-screen bg-background">
@@ -211,9 +233,10 @@ const GameZone = () => {
                           return;
                         }
                         if (mode.needsSet) {
-                          setSelectedSetId(questionSets[0].id);
+                          setPendingGame(mode.id);
+                        } else {
+                          setActiveGame(mode.id);
                         }
-                        setActiveGame(mode.id);
                       }}
                     >
                       <div className={`bg-gradient-to-br ${mode.color} p-6 text-white`}>

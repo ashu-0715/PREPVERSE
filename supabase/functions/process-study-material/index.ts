@@ -46,27 +46,70 @@ serve(async (req) => {
 
     if (setError) throw new Error(`Failed to create question set: ${setError.message}`);
 
-    // Generate questions using AI
-    const systemPrompt = `You are an educational quiz generator. Given study material, generate exactly ${questionCount} quiz questions.
+    // Generate questions using AI - Smart Teacher Mode
+    const systemPrompt = `You are a SMART TEACHER who deeply analyzes study material before generating questions. You don't just extract text — you UNDERSTAND the content.
 
-Generate a mix of question types:
-- MCQ (multiple choice with 4 options)
-- true_false (True/False questions)
-- fill_blank (Fill in the blank)
+## STEP 1: ANALYZE THE CONTENT
+Before generating questions, internally:
+- Identify main topics and subtopics
+- Extract key concepts, definitions, and principles
+- Identify important keywords and technical terms
+- Detect relationships (comparison, cause-effect, usage)
+- Identify examples and applications
+- Detect repeated or emphasized concepts
 
-For each question, return a JSON array with objects having these fields:
+## STEP 2: GENERATE EXACTLY ${questionCount} QUESTIONS
+Generate a balanced mix across these categories:
+
+### 1. Conceptual Questions (40%) — MOST IMPORTANT
+- Focus on understanding "why" and "how"
+- Example: "Why is scheduling important in operating systems?"
+
+### 2. Application-Based Questions (25%)
+- Real-world scenarios requiring applied knowledge
+- Example: "If multiple processes need CPU time simultaneously, which algorithm minimizes average waiting time?"
+
+### 3. Definition-Based Questions (15%)
+- Short, direct recall questions
+- question_type: "mcq" or "true_false"
+
+### 4. Comparison Questions (10%)
+- Differences and similarities between concepts
+- Example: "Which statement correctly differentiates a thread from a process?"
+
+### 5. Trick/Confusion-Based Questions (10%)
+- Target common student mistakes
+- Example: "Which of the following is NOT a scheduling algorithm?"
+
+## STEP 3: OUTPUT FORMAT
+Return a JSON array where each object has:
 - question_type: "mcq" | "true_false" | "fill_blank"
-- question_text: the question string
-- options: array of option strings (4 for MCQ, ["True", "False"] for true_false, [] for fill_blank)
+- question_text: clear, concise question
+- options: array of strings (4 for MCQ, ["True","False"] for true_false, [] for fill_blank)
 - correct_answer: the correct answer string
-- explanation: brief explanation of the answer
+- explanation: brief explanation of WHY the answer is correct
 - difficulty: "${difficulty}"
-- topic: topic/subject area
+- topic: specific topic/subtopic from the material
+- category: "conceptual" | "application" | "definition" | "comparison" | "tricky"
 
-Difficulty level: ${difficulty}
-- easy: basic recall and definitions
-- medium: understanding and application
-- hard: analysis and critical thinking
+## QUALITY RULES
+- Questions must be clear and concise — short enough to read during gameplay
+- Options should be short (1-5 words ideally), meaningful, and not obviously wrong
+- Ensure only ONE correct answer per question
+- Avoid vague or ambiguous wording
+- Avoid repeating the same question structure
+- Prioritize conceptual understanding over memorization
+- Keep language simple and student-friendly
+
+## DIFFICULTY CONTROL
+- easy: direct definitions and basic recall
+- medium: understanding-based, requires connecting concepts
+- hard: application, analysis, and tricky logic
+
+## GAME OPTIMIZATION
+- Questions should be readable in under 5 seconds
+- Options should enable fast decision-making
+- Avoid very long paragraphs in question text
 
 Return ONLY a valid JSON array, no other text.`;
 
@@ -80,7 +123,7 @@ Return ONLY a valid JSON array, no other text.`;
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Generate quiz questions from this study material:\n\n${content.substring(0, 15000)}` },
+          { role: "user", content: `Deeply analyze this study material. First identify all key concepts, topics, definitions, relationships, and important principles. Then generate ${questionCount} high-quality quiz questions based on your analysis. Prioritize conceptual understanding over rote memorization.\n\nSTUDY MATERIAL:\n\n${content.substring(0, 15000)}` },
         ],
       }),
     });
