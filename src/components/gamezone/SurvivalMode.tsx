@@ -13,9 +13,10 @@ interface SurvivalModeProps {
   questionSetId: string;
   onExit: () => void;
   userId: string;
+  topics?: string[];
 }
 
-const SurvivalMode = ({ questionSetId, onExit, userId }: SurvivalModeProps) => {
+const SurvivalMode = ({ questionSetId, onExit, userId, topics }: SurvivalModeProps) => {
   const [questions, setQuestions] = useState<GameQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lives, setLives] = useState(3);
@@ -35,8 +36,11 @@ const SurvivalMode = ({ questionSetId, onExit, userId }: SurvivalModeProps) => {
         .select("*")
         .eq("question_set_id", questionSetId);
       if (data) {
-        // Shuffle questions
-        const shuffled = (data as unknown as GameQuestion[]).sort(() => Math.random() - 0.5);
+        let filtered = data as unknown as GameQuestion[];
+        if (topics && topics.length > 0) {
+          filtered = filtered.filter(q => q.topic && topics.includes(q.topic));
+        }
+        const shuffled = filtered.sort(() => Math.random() - 0.5);
         setQuestions(shuffled);
       }
       setLoading(false);

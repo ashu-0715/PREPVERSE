@@ -17,6 +17,7 @@ interface RunAndReviseProps {
   userId: string;
   onExit: () => void;
   difficulty?: "easy" | "medium" | "hard";
+  topics?: string[];
 }
 
 interface AnswerGate {
@@ -74,7 +75,7 @@ const POWER_UP_INFO: Record<string, { icon: string; name: string; color: string 
   hint: { icon: "💡", name: "Hint Pulse", color: "#34d399" },
 };
 
-const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: RunAndReviseProps) => {
+const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium", topics }: RunAndReviseProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
@@ -140,7 +141,11 @@ const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: 
     const fetch = async () => {
       const { data } = await supabase.from("game_questions").select("*").eq("question_set_id", questionSetId);
       if (data && data.length > 0) {
-        setQuestions((data as unknown as GameQuestion[]).sort(() => Math.random() - 0.5));
+        let filtered = data as unknown as GameQuestion[];
+        if (topics && topics.length > 0) {
+          filtered = filtered.filter(q => q.topic && topics.includes(q.topic));
+        }
+        setQuestions(filtered.sort(() => Math.random() - 0.5));
       }
       setLoading(false);
     };

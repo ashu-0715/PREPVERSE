@@ -27,6 +27,7 @@ const GameZone = () => {
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [pendingGame, setPendingGame] = useState<string | null>(null);
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
+  const [selectedTopics, setSelectedTopics] = useState<string[] | undefined>(undefined);
   const [runnerDifficulty, setRunnerDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -127,8 +128,9 @@ const GameZone = () => {
         questionSets={questionSets}
         gameMode={pendingGame}
         gameTitle={modeInfo?.title || "Game"}
-        onSelect={(setId) => {
+        onSelect={(setId, topics) => {
           setSelectedSetId(setId);
+          setSelectedTopics(topics);
           setActiveGame(pendingGame);
           setPendingGame(null);
         }}
@@ -144,7 +146,8 @@ const GameZone = () => {
         <SurvivalMode
           questionSetId={selectedSetId}
           userId={userId}
-          onExit={() => { setActiveGame(null); setSelectedSetId(null); }}
+          topics={selectedTopics}
+          onExit={() => { setActiveGame(null); setSelectedSetId(null); setSelectedTopics(undefined); }}
         />
       </div>
     );
@@ -170,7 +173,8 @@ const GameZone = () => {
           questionSetId={selectedSetId}
           userId={userId}
           difficulty={runnerDifficulty}
-          onExit={() => { setActiveGame(null); setSelectedSetId(null); }}
+          topics={selectedTopics}
+          onExit={() => { setActiveGame(null); setSelectedSetId(null); setSelectedTopics(undefined); }}
         />
       </div>
     );
