@@ -179,10 +179,6 @@ const GameZone = () => {
       </div>
     );
   }
-        />
-      </div>
-    );
-  }
 
   // gameModes moved above early returns
 
