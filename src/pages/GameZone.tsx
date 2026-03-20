@@ -12,6 +12,7 @@ import SurvivalMode from "@/components/gamezone/SurvivalMode";
 import QuizBattle from "@/components/gamezone/QuizBattle";
 import RunAndRevise from "@/components/gamezone/RunAndRevise";
 import GameDashboard from "@/components/gamezone/GameDashboard";
+import NoteSelector from "@/components/gamezone/NoteSelector";
 import { motion } from "framer-motion";
 import {
   Gamepad2, ArrowLeft, Swords, Shield, Upload, Trophy,
