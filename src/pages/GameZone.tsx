@@ -128,8 +128,9 @@ const GameZone = () => {
         questionSets={questionSets}
         gameMode={pendingGame}
         gameTitle={modeInfo?.title || "Game"}
-        onSelect={(setId) => {
+        onSelect={(setId, topics) => {
           setSelectedSetId(setId);
+          setSelectedTopics(topics);
           setActiveGame(pendingGame);
           setPendingGame(null);
         }}
