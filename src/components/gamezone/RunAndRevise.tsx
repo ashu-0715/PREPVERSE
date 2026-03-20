@@ -75,7 +75,7 @@ const POWER_UP_INFO: Record<string, { icon: string; name: string; color: string 
   hint: { icon: "💡", name: "Hint Pulse", color: "#34d399" },
 };
 
-const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium" }: RunAndReviseProps) => {
+const RunAndRevise = ({ questionSetId, userId, onExit, difficulty = "medium", topics }: RunAndReviseProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
