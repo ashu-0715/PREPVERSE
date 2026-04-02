@@ -143,6 +143,9 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Live Stats Section */}
+      <LiveStatsSection />
+
       {/* Founders Section */}
       <FoundersSection />
 
