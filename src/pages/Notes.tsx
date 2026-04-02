@@ -501,8 +501,29 @@ const Notes = () => {
                         </div>
                       )}
                       <div>
-                        <Label>File (PDF, DOC, DOCX, Images) *</Label>
+                        <Label>Main File (PDF, DOC, DOCX) *</Label>
                         <Input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} required className="mt-1" />
+                      </div>
+                      <div>
+                        <Label>Additional Images (optional)</Label>
+                        <Input type="file" accept=".png,.jpg,.jpeg,.webp" multiple onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setUploadImages(prev => [...prev, ...files]);
+                        }} className="mt-1" />
+                        {uploadImages.length > 0 && (
+                          <div className="grid grid-cols-3 gap-2 mt-2">
+                            {uploadImages.map((img, i) => (
+                              <div key={i} className="relative group rounded-lg overflow-hidden border">
+                                <img src={URL.createObjectURL(img)} alt="" className="w-full h-20 object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => setUploadImages(prev => prev.filter((_, idx) => idx !== i))}
+                                  className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                >×</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <Button type="submit" className="w-full" disabled={uploading}>
                         {uploading ? "Uploading..." : "Upload Note"}
