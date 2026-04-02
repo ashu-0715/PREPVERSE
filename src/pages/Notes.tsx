@@ -432,10 +432,43 @@ const Notes = () => {
                       </div>
                       <div>
                         <Label>Subject *</Label>
-                        <Select value={uploadSubject} onValueChange={setUploadSubject}>
+                        <Select value={uploadSubject} onValueChange={(v) => {
+                          if (v === "__custom__") { setCustomSubjectMode(true); setUploadSubject(""); }
+                          else { setCustomSubjectMode(false); setUploadSubject(v); }
+                        }}>
                           <SelectTrigger className="mt-1"><SelectValue placeholder="Select subject" /></SelectTrigger>
-                          <SelectContent>{SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                          <SelectContent>
+                            {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            <SelectItem value="__custom__">➕ Add Your Subject</SelectItem>
+                          </SelectContent>
                         </Select>
+                        {customSubjectMode && (
+                          <div className="mt-2 flex gap-2">
+                            <Input
+                              value={customSubjectName}
+                              onChange={(e) => setCustomSubjectName(e.target.value)}
+                              placeholder="Enter new subject name"
+                              className="flex-1"
+                            />
+                            <Button type="button" size="sm" onClick={async () => {
+                              const name = customSubjectName.trim();
+                              if (!name) { toast.error("Enter a subject name"); return; }
+                              if (subjects.some(s => s.toLowerCase() === name.toLowerCase())) {
+                                setUploadSubject(subjects.find(s => s.toLowerCase() === name.toLowerCase()) || name);
+                                setCustomSubjectMode(false);
+                                toast.info("Subject already exists, selected it");
+                                return;
+                              }
+                              const { error } = await supabase.from("subjects").insert({ name, created_by: user?.id } as any);
+                              if (error) { toast.error("Failed to add subject"); return; }
+                              setSubjects(prev => [...prev, name].sort());
+                              setUploadSubject(name);
+                              setCustomSubjectMode(false);
+                              setCustomSubjectName("");
+                              toast.success(`Subject "${name}" added!`);
+                            }}>Add</Button>
+                          </div>
+                        )}
                       </div>
                       <div>
                         <Label>Semester</Label>
