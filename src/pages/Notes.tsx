@@ -54,7 +54,7 @@ interface NoteRequest {
 }
 
 const SEMESTERS = ["Semester 1","Semester 2","Semester 3","Semester 4","Semester 5","Semester 6","Semester 7","Semester 8"];
-const SUBJECTS = ["Mathematics","Physics","Chemistry","Computer Science","Electronics","Data Structures","Algorithms","Database Management","Operating Systems","Computer Networks","Web Development","Machine Learning","Artificial Intelligence","Software Engineering","Other"];
+const DEFAULT_SUBJECTS = ["Mathematics","Physics","Chemistry","Computer Science","Electronics","Data Structures","Algorithms","Database Management","Operating Systems","Computer Networks","Web Development","Machine Learning","Artificial Intelligence","Software Engineering","Other"];
 
 const Notes = () => {
   const navigate = useNavigate();
