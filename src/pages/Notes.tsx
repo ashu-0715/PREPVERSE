@@ -79,6 +79,7 @@ const Notes = () => {
   const [uploadSubject, setUploadSubject] = useState("");
   const [uploadSemester, setUploadSemester] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadImages, setUploadImages] = useState<File[]>([]);
   const [uploadNoteType, setUploadNoteType] = useState("free");
   const [uploadPrice, setUploadPrice] = useState("");
 
