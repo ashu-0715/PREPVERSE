@@ -396,7 +396,7 @@ const Notes = () => {
                         <Label>Subject *</Label>
                         <Select value={requestSubject} onValueChange={setRequestSubject}>
                           <SelectTrigger className="mt-1"><SelectValue placeholder="Select subject" /></SelectTrigger>
-                          <SelectContent>{SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                          <SelectContent>{subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div>
