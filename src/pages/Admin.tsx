@@ -447,6 +447,11 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
+          {/* Premium Plans Tab */}
+          <TabsContent value="premium-plans">
+            <PremiumPlanManager />
+          </TabsContent>
+
           {/* Activity Tab */}
           <TabsContent value="activity">
             <Card>
