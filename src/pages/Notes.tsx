@@ -356,7 +356,8 @@ const Notes = () => {
     const query = searchQuery.toLowerCase();
     const matchesSearch = note.title.toLowerCase().includes(query) || note.subject.toLowerCase().includes(query) || (note.semester && note.semester.toLowerCase().includes(query));
     const matchesType = typeFilter === "all" || note.note_type === typeFilter;
-    return matchesSearch && matchesType;
+    const matchesSubject = subjectFilter === "all" || note.subject === subjectFilter;
+    return matchesSearch && matchesType && matchesSubject;
   });
 
   if (sortBy === "top_rated") {
