@@ -65,9 +65,13 @@ const Notes = () => {
   const [user, setUser] = useState<any>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
   const [purchasedNoteIds, setPurchasedNoteIds] = useState<Set<string>>(new Set());
+  const [subjects, setSubjects] = useState<string[]>(DEFAULT_SUBJECTS);
+  const [customSubjectMode, setCustomSubjectMode] = useState(false);
+  const [customSubjectName, setCustomSubjectName] = useState("");
 
   // Upload form state
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
