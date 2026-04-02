@@ -552,11 +552,18 @@ const Notes = () => {
         </div>
 
         {/* Search + Filters */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-3">
+        <div className="mb-6 flex flex-col sm:flex-row gap-3 flex-wrap">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search notes..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
           </div>
+          <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+            <SelectTrigger className="w-[180px]"><BookOpen className="w-4 h-4 mr-2" /><SelectValue placeholder="Subject" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Subjects</SelectItem>
+              {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[140px]"><Filter className="w-4 h-4 mr-2" /><SelectValue /></SelectTrigger>
             <SelectContent>
