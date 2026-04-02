@@ -637,7 +637,20 @@ const Notes = () => {
                       </div>
                     </div>
 
-                    {/* Uploader info */}
+                    {/* Image Gallery */}
+                    {(note as any).image_urls && (note as any).image_urls.length > 0 && canAccessNote(note) && (
+                      <div className="grid grid-cols-3 gap-1 mb-3 rounded-lg overflow-hidden">
+                        {((note as any).image_urls as string[]).slice(0, 3).map((url, i) => (
+                          <img key={i} src={url} alt="" className="w-full h-16 object-cover cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(url, "_blank")} />
+                        ))}
+                        {(note as any).image_urls.length > 3 && (
+                          <div className="bg-muted flex items-center justify-center text-xs text-muted-foreground font-medium">
+                            +{(note as any).image_urls.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2 mb-3">
                       <Avatar className="w-6 h-6">
                         <AvatarImage src={note.profile?.avatar_url} />
