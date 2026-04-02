@@ -111,7 +111,13 @@ const Notes = () => {
     checkUser();
     fetchNotes();
     fetchNoteRequests();
+    fetchSubjects();
   }, []);
+
+  const fetchSubjects = async () => {
+    const { data } = await supabase.from("subjects").select("name").order("name");
+    if (data) setSubjects(data.map(s => s.name));
+  };
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
