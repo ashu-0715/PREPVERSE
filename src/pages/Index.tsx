@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import FoundersSection from "@/components/FoundersSection";
+import LiveStatsSection from "@/components/LiveStatsSection";
 
 const Index = () => {
   const navigate = useNavigate();
