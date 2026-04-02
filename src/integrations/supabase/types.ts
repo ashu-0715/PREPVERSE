@@ -447,6 +447,7 @@ export type Database = {
           created_at: string | null
           file_url: string
           id: string
+          image_urls: string[] | null
           note_type: string | null
           price: number | null
           rating: number | null
@@ -460,6 +461,7 @@ export type Database = {
           created_at?: string | null
           file_url: string
           id?: string
+          image_urls?: string[] | null
           note_type?: string | null
           price?: number | null
           rating?: number | null
@@ -473,6 +475,7 @@ export type Database = {
           created_at?: string | null
           file_url?: string
           id?: string
+          image_urls?: string[] | null
           note_type?: string | null
           price?: number | null
           rating?: number | null
@@ -554,6 +557,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      premium_plans: {
+        Row: {
+          benefits: string[]
+          billing_duration: string
+          created_at: string
+          cta_text: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          plan_name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          benefits?: string[]
+          billing_duration?: string
+          created_at?: string
+          cta_text?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          plan_name: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          benefits?: string[]
+          billing_duration?: string
+          created_at?: string
+          cta_text?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          plan_name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -991,6 +1036,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subjects: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       user_activity: {
         Row: {

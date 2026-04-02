@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import PremiumPlanManager from "@/components/admin/PremiumPlanManager";
 import {
   Shield, Users, FileText, Activity, LogOut, Search, RefreshCw, Clock,
-  User, BookOpen, Crown, Trash2, CheckCircle, XCircle,
+  User, BookOpen, Crown, Trash2, CheckCircle, XCircle, Settings,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -222,6 +223,9 @@ const Admin = () => {
               )}
             </TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="premium-plans" className="gap-1">
+              <Settings className="w-3 h-3" /> Plans
+            </TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
@@ -441,6 +445,11 @@ const Admin = () => {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Premium Plans Tab */}
+          <TabsContent value="premium-plans">
+            <PremiumPlanManager />
           </TabsContent>
 
           {/* Activity Tab */}

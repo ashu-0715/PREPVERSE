@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import {
   ArrowLeft, Upload, Star, Download, FileText, Eye, MessageSquarePlus,
-  CheckCircle, Clock, Search, Pencil, Trash2, User, Crown, Lock, Filter, SortAsc,
+  CheckCircle, Clock, Search, Pencil, Trash2, User, Crown, Lock, Filter, SortAsc, BookOpen,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +54,7 @@ interface NoteRequest {
 }
 
 const SEMESTERS = ["Semester 1","Semester 2","Semester 3","Semester 4","Semester 5","Semester 6","Semester 7","Semester 8"];
-const SUBJECTS = ["Mathematics","Physics","Chemistry","Computer Science","Electronics","Data Structures","Algorithms","Database Management","Operating Systems","Computer Networks","Web Development","Machine Learning","Artificial Intelligence","Software Engineering","Other"];
+const DEFAULT_SUBJECTS = ["Mathematics","Physics","Chemistry","Computer Science","Electronics","Data Structures","Algorithms","Database Management","Operating Systems","Computer Networks","Web Development","Machine Learning","Artificial Intelligence","Software Engineering","Other"];
 
 const Notes = () => {
   const navigate = useNavigate();
@@ -65,9 +65,13 @@ const Notes = () => {
   const [user, setUser] = useState<any>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
   const [purchasedNoteIds, setPurchasedNoteIds] = useState<Set<string>>(new Set());
+  const [subjects, setSubjects] = useState<string[]>(DEFAULT_SUBJECTS);
+  const [customSubjectMode, setCustomSubjectMode] = useState(false);
+  const [customSubjectName, setCustomSubjectName] = useState("");
 
   // Upload form state
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -75,6 +79,7 @@ const Notes = () => {
   const [uploadSubject, setUploadSubject] = useState("");
   const [uploadSemester, setUploadSemester] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadImages, setUploadImages] = useState<File[]>([]);
   const [uploadNoteType, setUploadNoteType] = useState("free");
   const [uploadPrice, setUploadPrice] = useState("");
 
@@ -106,7 +111,13 @@ const Notes = () => {
     checkUser();
     fetchNotes();
     fetchNoteRequests();
+    fetchSubjects();
   }, []);
+
+  const fetchSubjects = async () => {
+    const { data } = await supabase.from("subjects").select("name").order("name");
+    if (data) setSubjects(data.map(s => s.name));
+  };
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -231,6 +242,18 @@ const Notes = () => {
 
       const { data: { publicUrl } } = supabase.storage.from("notes").getPublicUrl(fileName);
 
+      // Upload additional images
+      const imageUrls: string[] = [];
+      for (const img of uploadImages) {
+        const imgExt = img.name.split(".").pop();
+        const imgName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${imgExt}`;
+        const { error: imgErr } = await supabase.storage.from("notes").upload(imgName, img);
+        if (!imgErr) {
+          const { data: { publicUrl: imgUrl } } = supabase.storage.from("notes").getPublicUrl(imgName);
+          imageUrls.push(imgUrl);
+        }
+      }
+
       const { error: insertError } = await supabase.from("notes").insert({
         user_id: user.id,
         title: uploadTitle,
@@ -239,6 +262,7 @@ const Notes = () => {
         file_url: publicUrl,
         note_type: uploadNoteType,
         price: uploadNoteType === "paid" ? Number(uploadPrice) : 0,
+        image_urls: imageUrls,
       } as any);
       if (insertError) throw insertError;
 
@@ -312,7 +336,8 @@ const Notes = () => {
 
   const resetUploadForm = () => {
     setUploadTitle(""); setUploadSubject(""); setUploadSemester("");
-    setUploadFile(null); setUploadNoteType("free"); setUploadPrice("");
+    setUploadFile(null); setUploadImages([]); setUploadNoteType("free"); setUploadPrice("");
+    setCustomSubjectMode(false); setCustomSubjectName("");
   };
 
   const resetRequestForm = () => {
@@ -331,7 +356,8 @@ const Notes = () => {
     const query = searchQuery.toLowerCase();
     const matchesSearch = note.title.toLowerCase().includes(query) || note.subject.toLowerCase().includes(query) || (note.semester && note.semester.toLowerCase().includes(query));
     const matchesType = typeFilter === "all" || note.note_type === typeFilter;
-    return matchesSearch && matchesType;
+    const matchesSubject = subjectFilter === "all" || note.subject === subjectFilter;
+    return matchesSearch && matchesType && matchesSubject;
   });
 
   if (sortBy === "top_rated") {
@@ -385,7 +411,7 @@ const Notes = () => {
                         <Label>Subject *</Label>
                         <Select value={requestSubject} onValueChange={setRequestSubject}>
                           <SelectTrigger className="mt-1"><SelectValue placeholder="Select subject" /></SelectTrigger>
-                          <SelectContent>{SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                          <SelectContent>{subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div>
@@ -421,10 +447,43 @@ const Notes = () => {
                       </div>
                       <div>
                         <Label>Subject *</Label>
-                        <Select value={uploadSubject} onValueChange={setUploadSubject}>
+                        <Select value={uploadSubject} onValueChange={(v) => {
+                          if (v === "__custom__") { setCustomSubjectMode(true); setUploadSubject(""); }
+                          else { setCustomSubjectMode(false); setUploadSubject(v); }
+                        }}>
                           <SelectTrigger className="mt-1"><SelectValue placeholder="Select subject" /></SelectTrigger>
-                          <SelectContent>{SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                          <SelectContent>
+                            {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            <SelectItem value="__custom__">➕ Add Your Subject</SelectItem>
+                          </SelectContent>
                         </Select>
+                        {customSubjectMode && (
+                          <div className="mt-2 flex gap-2">
+                            <Input
+                              value={customSubjectName}
+                              onChange={(e) => setCustomSubjectName(e.target.value)}
+                              placeholder="Enter new subject name"
+                              className="flex-1"
+                            />
+                            <Button type="button" size="sm" onClick={async () => {
+                              const name = customSubjectName.trim();
+                              if (!name) { toast.error("Enter a subject name"); return; }
+                              if (subjects.some(s => s.toLowerCase() === name.toLowerCase())) {
+                                setUploadSubject(subjects.find(s => s.toLowerCase() === name.toLowerCase()) || name);
+                                setCustomSubjectMode(false);
+                                toast.info("Subject already exists, selected it");
+                                return;
+                              }
+                              const { error } = await supabase.from("subjects").insert({ name, created_by: user?.id } as any);
+                              if (error) { toast.error("Failed to add subject"); return; }
+                              setSubjects(prev => [...prev, name].sort());
+                              setUploadSubject(name);
+                              setCustomSubjectMode(false);
+                              setCustomSubjectName("");
+                              toast.success(`Subject "${name}" added!`);
+                            }}>Add</Button>
+                          </div>
+                        )}
                       </div>
                       <div>
                         <Label>Semester</Label>
@@ -457,8 +516,29 @@ const Notes = () => {
                         </div>
                       )}
                       <div>
-                        <Label>File (PDF, DOC, DOCX, Images) *</Label>
+                        <Label>Main File (PDF, DOC, DOCX) *</Label>
                         <Input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} required className="mt-1" />
+                      </div>
+                      <div>
+                        <Label>Additional Images (optional)</Label>
+                        <Input type="file" accept=".png,.jpg,.jpeg,.webp" multiple onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setUploadImages(prev => [...prev, ...files]);
+                        }} className="mt-1" />
+                        {uploadImages.length > 0 && (
+                          <div className="grid grid-cols-3 gap-2 mt-2">
+                            {uploadImages.map((img, i) => (
+                              <div key={i} className="relative group rounded-lg overflow-hidden border">
+                                <img src={URL.createObjectURL(img)} alt="" className="w-full h-20 object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => setUploadImages(prev => prev.filter((_, idx) => idx !== i))}
+                                  className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                >×</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <Button type="submit" className="w-full" disabled={uploading}>
                         {uploading ? "Uploading..." : "Upload Note"}
@@ -472,11 +552,18 @@ const Notes = () => {
         </div>
 
         {/* Search + Filters */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-3">
+        <div className="mb-6 flex flex-col sm:flex-row gap-3 flex-wrap">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search notes..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
           </div>
+          <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+            <SelectTrigger className="w-[180px]"><BookOpen className="w-4 h-4 mr-2" /><SelectValue placeholder="Subject" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Subjects</SelectItem>
+              {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[140px]"><Filter className="w-4 h-4 mr-2" /><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -550,7 +637,20 @@ const Notes = () => {
                       </div>
                     </div>
 
-                    {/* Uploader info */}
+                    {/* Image Gallery */}
+                    {(note as any).image_urls && (note as any).image_urls.length > 0 && canAccessNote(note) && (
+                      <div className="grid grid-cols-3 gap-1 mb-3 rounded-lg overflow-hidden">
+                        {((note as any).image_urls as string[]).slice(0, 3).map((url, i) => (
+                          <img key={i} src={url} alt="" className="w-full h-16 object-cover cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(url, "_blank")} />
+                        ))}
+                        {(note as any).image_urls.length > 3 && (
+                          <div className="bg-muted flex items-center justify-center text-xs text-muted-foreground font-medium">
+                            +{(note as any).image_urls.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2 mb-3">
                       <Avatar className="w-6 h-6">
                         <AvatarImage src={note.profile?.avatar_url} />
@@ -678,7 +778,7 @@ const Notes = () => {
                 <Label>Subject *</Label>
                 <Select value={editSubject} onValueChange={setEditSubject}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>{SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  <SelectContent>{subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
