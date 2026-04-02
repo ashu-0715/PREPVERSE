@@ -7,6 +7,17 @@ import { toast } from "sonner";
 import { ArrowLeft, Crown, Check, Sparkles, Clock } from "lucide-react";
 import paymentQR from "@/assets/payment-qr.png";
 
+interface PremiumPlan {
+  id: string;
+  plan_name: string;
+  price: number;
+  billing_duration: string;
+  benefits: string[];
+  description: string | null;
+  cta_text: string | null;
+  is_active: boolean;
+}
+
 const Premium = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
@@ -14,30 +25,34 @@ const Premium = () => {
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [paymentPending, setPaymentPending] = useState(false);
+  const [plan, setPlan] = useState<PremiumPlan | null>(null);
 
   useEffect(() => {
     checkPremiumStatus();
+    fetchPlan();
   }, []);
+
+  const fetchPlan = async () => {
+    const { data } = await supabase
+      .from("premium_plans")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order")
+      .limit(1);
+    if (data && data.length > 0) setPlan(data[0] as any);
+  };
 
   const checkPremiumStatus = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
+    if (!session) { navigate("/auth"); return; }
     setUser(session.user);
 
     const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_premium")
-      .eq("id", session.user.id)
-      .single();
-
+      .from("profiles").select("is_premium").eq("id", session.user.id).single();
     setIsPremium(profile?.is_premium || false);
     setLoading(false);
   };
-
-  const [paymentPending, setPaymentPending] = useState(false);
 
   useEffect(() => {
     if (user) checkPendingPayment();
@@ -46,53 +61,34 @@ const Premium = () => {
   const checkPendingPayment = async () => {
     if (!user) return;
     const { data } = await supabase
-      .from("payments")
-      .select("id, status")
-      .eq("user_id", user.id)
-      .eq("payment_type", "premium")
-      .eq("status", "pending")
-      .maybeSingle();
+      .from("payments").select("id, status")
+      .eq("user_id", user.id).eq("payment_type", "premium").eq("status", "pending").maybeSingle();
     setPaymentPending(!!data);
   };
 
   const handleVerifyPayment = async () => {
     if (!user) return;
     setVerifying(true);
-
     try {
-      // Check if already has a pending payment
       const { data: existing } = await supabase
-        .from("payments")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("payment_type", "premium")
-        .eq("status", "pending")
-        .maybeSingle();
-
+        .from("payments").select("id")
+        .eq("user_id", user.id).eq("payment_type", "premium").eq("status", "pending").maybeSingle();
       if (existing) {
         toast.info("Your payment is already pending admin approval");
         setPaymentPending(true);
         setVerifying(false);
         return;
       }
-
-      // Record payment as pending (admin will approve)
       const { error: paymentError } = await supabase.from("payments").insert({
-        user_id: user.id,
-        amount: 199,
-        status: "pending",
-        payment_method: "qr",
-        payment_type: "premium",
+        user_id: user.id, amount: plan?.price || 199,
+        status: "pending", payment_method: "qr", payment_type: "premium",
       });
       if (paymentError) throw paymentError;
-
       setPaymentPending(true);
       toast.success("Payment submitted! Awaiting admin approval.");
     } catch (error: any) {
       toast.error(error.message || "Submission failed");
-    } finally {
-      setVerifying(false);
-    }
+    } finally { setVerifying(false); }
   };
 
   if (loading) {
@@ -103,24 +99,17 @@ const Premium = () => {
     );
   }
 
-  // Success animation
   if (showSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-400/20 via-amber-500/20 to-orange-500/20">
         <div className="text-center animate-in zoom-in-50 duration-500">
           <div className="text-8xl mb-6 animate-bounce">👑</div>
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-yellow-500 to-amber-600 bg-clip-text text-transparent">
-            WOAHH 😭🔥
-          </h1>
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-yellow-500 to-amber-600 bg-clip-text text-transparent">WOAHH 😭🔥</h1>
           <h2 className="text-3xl font-bold mb-2">YOU'RE NOW A PREMIUM USER!</h2>
           <p className="text-muted-foreground">Redirecting to dashboard...</p>
           <div className="mt-6 flex justify-center gap-2">
             {[...Array(5)].map((_, i) => (
-              <Sparkles
-                key={i}
-                className="w-6 h-6 text-yellow-500 animate-pulse"
-                style={{ animationDelay: `${i * 200}ms` }}
-              />
+              <Sparkles key={i} className="w-6 h-6 text-yellow-500 animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />
             ))}
           </div>
         </div>
@@ -133,9 +122,7 @@ const Premium = () => {
       <div className="min-h-screen bg-background">
         <header className="border-b bg-card shadow-sm">
           <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back
-            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}><ArrowLeft className="w-4 h-4 mr-2" /> Back</Button>
             <h1 className="text-2xl font-bold">Premium</h1>
           </div>
         </header>
@@ -149,7 +136,7 @@ const Premium = () => {
     );
   }
 
-  const benefits = [
+  const benefits = plan?.benefits || [
     "View & download premium-only notes",
     "Publish notes as paid content",
     "Access exclusive study materials",
@@ -161,11 +148,9 @@ const Premium = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back
-          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}><ArrowLeft className="w-4 h-4 mr-2" /> Back</Button>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-amber-600 bg-clip-text text-transparent">
-            Go Premium
+            {plan?.plan_name || "Go Premium"}
           </h1>
         </div>
       </header>
@@ -174,10 +159,11 @@ const Premium = () => {
         <Card className="p-8 border-2 border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 to-amber-500/5">
           <div className="text-center mb-8">
             <Crown className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
-            <h2 className="text-3xl font-bold mb-2">Premium Plan</h2>
+            <h2 className="text-3xl font-bold mb-2">{plan?.plan_name || "Premium Plan"}</h2>
+            {plan?.description && <p className="text-muted-foreground mb-4">{plan.description}</p>}
             <div className="text-4xl font-bold text-yellow-600 dark:text-yellow-400">
-              ₹199
-              <span className="text-base font-normal text-muted-foreground ml-2">one-time</span>
+              ₹{plan?.price || 199}
+              <span className="text-base font-normal text-muted-foreground ml-2">{plan?.billing_duration || "one-time"}</span>
             </div>
           </div>
 
@@ -191,20 +177,12 @@ const Premium = () => {
           </div>
 
           <div className="border-t pt-8">
-            <h3 className="text-lg font-semibold text-center mb-4">Scan to Pay ₹199</h3>
+            <h3 className="text-lg font-semibold text-center mb-4">Scan to Pay ₹{plan?.price || 199}</h3>
             <div className="flex justify-center mb-4">
-              <img
-                src={paymentQR}
-                alt="Payment QR Code"
-                className="w-64 h-64 object-contain rounded-lg border bg-white p-2"
-              />
+              <img src={paymentQR} alt="Payment QR Code" className="w-64 h-64 object-contain rounded-lg border bg-white p-2" />
             </div>
-            <p className="text-center text-sm text-muted-foreground mb-2">
-              UPI ID: aswini0715@okhdfcbank
-            </p>
-            <p className="text-center text-xs text-muted-foreground mb-6">
-              Scan with any UPI app (GPay, PhonePe, Paytm)
-            </p>
+            <p className="text-center text-sm text-muted-foreground mb-2">UPI ID: aswini0715@okhdfcbank</p>
+            <p className="text-center text-xs text-muted-foreground mb-6">Scan with any UPI app (GPay, PhonePe, Paytm)</p>
 
             {paymentPending ? (
               <div className="text-center p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
@@ -219,7 +197,7 @@ const Premium = () => {
                 className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-semibold py-3"
                 size="lg"
               >
-                {verifying ? "Submitting..." : "I've Paid — Submit for Verification"}
+                {verifying ? "Submitting..." : (plan?.cta_text || "I've Paid — Submit for Verification")}
               </Button>
             )}
           </div>
