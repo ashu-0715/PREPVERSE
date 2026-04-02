@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import {
   ArrowLeft, Upload, Star, Download, FileText, Eye, MessageSquarePlus,
-  CheckCircle, Clock, Search, Pencil, Trash2, User, Crown, Lock, Filter, SortAsc,
+  CheckCircle, Clock, Search, Pencil, Trash2, User, Crown, Lock, Filter, SortAsc, BookOpen,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
