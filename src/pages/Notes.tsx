@@ -242,6 +242,18 @@ const Notes = () => {
 
       const { data: { publicUrl } } = supabase.storage.from("notes").getPublicUrl(fileName);
 
+      // Upload additional images
+      const imageUrls: string[] = [];
+      for (const img of uploadImages) {
+        const imgExt = img.name.split(".").pop();
+        const imgName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${imgExt}`;
+        const { error: imgErr } = await supabase.storage.from("notes").upload(imgName, img);
+        if (!imgErr) {
+          const { data: { publicUrl: imgUrl } } = supabase.storage.from("notes").getPublicUrl(imgName);
+          imageUrls.push(imgUrl);
+        }
+      }
+
       const { error: insertError } = await supabase.from("notes").insert({
         user_id: user.id,
         title: uploadTitle,
@@ -250,6 +262,7 @@ const Notes = () => {
         file_url: publicUrl,
         note_type: uploadNoteType,
         price: uploadNoteType === "paid" ? Number(uploadPrice) : 0,
+        image_urls: imageUrls,
       } as any);
       if (insertError) throw insertError;
 
