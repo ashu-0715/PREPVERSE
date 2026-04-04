@@ -337,7 +337,7 @@ const Notes = () => {
 
   const resetUploadForm = () => {
     setUploadTitle(""); setUploadSubject(""); setUploadSemester("");
-    setUploadFile(null); setUploadImages([]); setUploadNoteType("free"); setUploadPrice("");
+    setUploadFiles([]); setUploadNoteType("free"); setUploadPrice("");
     setCustomSubjectMode(false); setCustomSubjectName("");
   };
 
