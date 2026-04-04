@@ -78,8 +78,7 @@ const Notes = () => {
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadSubject, setUploadSubject] = useState("");
   const [uploadSemester, setUploadSemester] = useState("");
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadImages, setUploadImages] = useState<File[]>([]);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadNoteType, setUploadNoteType] = useState("free");
   const [uploadPrice, setUploadPrice] = useState("");
 
@@ -221,7 +220,7 @@ const Notes = () => {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { toast.error("Please log in"); navigate("/auth"); return; }
-    if (!uploadFile) { toast.error("Please select a file"); return; }
+    if (uploadFiles.length === 0) { toast.error("Please select at least one file"); return; }
 
     if ((uploadNoteType === "premium" || uploadNoteType === "paid") && !isPremium) {
       toast.error("Only premium users can publish premium/paid notes");
@@ -235,22 +234,24 @@ const Notes = () => {
 
     setUploading(true);
     try {
-      const fileExt = uploadFile.name.split(".").pop();
+      // Upload first file as the main file_url
+      const firstFile = uploadFiles[0];
+      const fileExt = firstFile.name.split(".").pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from("notes").upload(fileName, uploadFile);
+      const { error: uploadError } = await supabase.storage.from("notes").upload(fileName, firstFile);
       if (uploadError) throw uploadError;
-
       const { data: { publicUrl } } = supabase.storage.from("notes").getPublicUrl(fileName);
 
-      // Upload additional images
+      // Upload remaining files as image_urls
       const imageUrls: string[] = [];
-      for (const img of uploadImages) {
-        const imgExt = img.name.split(".").pop();
-        const imgName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${imgExt}`;
-        const { error: imgErr } = await supabase.storage.from("notes").upload(imgName, img);
-        if (!imgErr) {
-          const { data: { publicUrl: imgUrl } } = supabase.storage.from("notes").getPublicUrl(imgName);
-          imageUrls.push(imgUrl);
+      for (let i = 1; i < uploadFiles.length; i++) {
+        const f = uploadFiles[i];
+        const fExt = f.name.split(".").pop();
+        const fName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fExt}`;
+        const { error: fErr } = await supabase.storage.from("notes").upload(fName, f);
+        if (!fErr) {
+          const { data: { publicUrl: fUrl } } = supabase.storage.from("notes").getPublicUrl(fName);
+          imageUrls.push(fUrl);
         }
       }
 
@@ -266,7 +267,7 @@ const Notes = () => {
       } as any);
       if (insertError) throw insertError;
 
-      toast.success("Note uploaded!");
+      toast.success(`Uploaded ${uploadFiles.length} file(s) successfully!`);
       setUploadDialogOpen(false);
       resetUploadForm();
       fetchNotes();
@@ -336,7 +337,7 @@ const Notes = () => {
 
   const resetUploadForm = () => {
     setUploadTitle(""); setUploadSubject(""); setUploadSemester("");
-    setUploadFile(null); setUploadImages([]); setUploadNoteType("free"); setUploadPrice("");
+    setUploadFiles([]); setUploadNoteType("free"); setUploadPrice("");
     setCustomSubjectMode(false); setCustomSubjectName("");
   };
 
@@ -516,27 +517,29 @@ const Notes = () => {
                         </div>
                       )}
                       <div>
-                        <Label>Main File (PDF, DOC, DOCX) *</Label>
-                        <Input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} required className="mt-1" />
-                      </div>
-                      <div>
-                        <Label>Additional Images (optional)</Label>
-                        <Input type="file" accept=".png,.jpg,.jpeg,.webp" multiple onChange={(e) => {
+                        <Label>Upload Files (PDF, DOC, Images) *</Label>
+                        <p className="text-xs text-muted-foreground mb-1">Add as many documents and images as you need</p>
+                        <Input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.webp" multiple onChange={(e) => {
                           const files = Array.from(e.target.files || []);
-                          setUploadImages(prev => [...prev, ...files]);
+                          setUploadFiles(prev => [...prev, ...files]);
                         }} className="mt-1" />
-                        {uploadImages.length > 0 && (
-                          <div className="grid grid-cols-3 gap-2 mt-2">
-                            {uploadImages.map((img, i) => (
-                              <div key={i} className="relative group rounded-lg overflow-hidden border">
-                                <img src={URL.createObjectURL(img)} alt="" className="w-full h-20 object-cover" />
-                                <button
-                                  type="button"
-                                  onClick={() => setUploadImages(prev => prev.filter((_, idx) => idx !== i))}
-                                  className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                >×</button>
-                              </div>
-                            ))}
+                        {uploadFiles.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-xs text-muted-foreground">{uploadFiles.length} file(s) selected</p>
+                            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                              {uploadFiles.map((file, i) => (
+                                <div key={i} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30 group">
+                                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                                  <span className="text-sm truncate flex-1">{file.name}</span>
+                                  <span className="text-xs text-muted-foreground shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setUploadFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                    className="text-destructive hover:bg-destructive/10 rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
