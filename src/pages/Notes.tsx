@@ -220,7 +220,7 @@ const Notes = () => {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { toast.error("Please log in"); navigate("/auth"); return; }
-    if (!uploadFile) { toast.error("Please select a file"); return; }
+    if (uploadFiles.length === 0) { toast.error("Please select at least one file"); return; }
 
     if ((uploadNoteType === "premium" || uploadNoteType === "paid") && !isPremium) {
       toast.error("Only premium users can publish premium/paid notes");
@@ -234,22 +234,24 @@ const Notes = () => {
 
     setUploading(true);
     try {
-      const fileExt = uploadFile.name.split(".").pop();
+      // Upload first file as the main file_url
+      const firstFile = uploadFiles[0];
+      const fileExt = firstFile.name.split(".").pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from("notes").upload(fileName, uploadFile);
+      const { error: uploadError } = await supabase.storage.from("notes").upload(fileName, firstFile);
       if (uploadError) throw uploadError;
-
       const { data: { publicUrl } } = supabase.storage.from("notes").getPublicUrl(fileName);
 
-      // Upload additional images
+      // Upload remaining files as image_urls
       const imageUrls: string[] = [];
-      for (const img of uploadImages) {
-        const imgExt = img.name.split(".").pop();
-        const imgName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${imgExt}`;
-        const { error: imgErr } = await supabase.storage.from("notes").upload(imgName, img);
-        if (!imgErr) {
-          const { data: { publicUrl: imgUrl } } = supabase.storage.from("notes").getPublicUrl(imgName);
-          imageUrls.push(imgUrl);
+      for (let i = 1; i < uploadFiles.length; i++) {
+        const f = uploadFiles[i];
+        const fExt = f.name.split(".").pop();
+        const fName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fExt}`;
+        const { error: fErr } = await supabase.storage.from("notes").upload(fName, f);
+        if (!fErr) {
+          const { data: { publicUrl: fUrl } } = supabase.storage.from("notes").getPublicUrl(fName);
+          imageUrls.push(fUrl);
         }
       }
 
@@ -265,7 +267,7 @@ const Notes = () => {
       } as any);
       if (insertError) throw insertError;
 
-      toast.success("Note uploaded!");
+      toast.success(`Uploaded ${uploadFiles.length} file(s) successfully!`);
       setUploadDialogOpen(false);
       resetUploadForm();
       fetchNotes();
