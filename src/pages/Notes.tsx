@@ -517,27 +517,29 @@ const Notes = () => {
                         </div>
                       )}
                       <div>
-                        <Label>Main File (PDF, DOC, DOCX) *</Label>
-                        <Input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} required className="mt-1" />
-                      </div>
-                      <div>
-                        <Label>Additional Images (optional)</Label>
-                        <Input type="file" accept=".png,.jpg,.jpeg,.webp" multiple onChange={(e) => {
+                        <Label>Upload Files (PDF, DOC, Images) *</Label>
+                        <p className="text-xs text-muted-foreground mb-1">Add as many documents and images as you need</p>
+                        <Input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.webp" multiple onChange={(e) => {
                           const files = Array.from(e.target.files || []);
-                          setUploadImages(prev => [...prev, ...files]);
+                          setUploadFiles(prev => [...prev, ...files]);
                         }} className="mt-1" />
-                        {uploadImages.length > 0 && (
-                          <div className="grid grid-cols-3 gap-2 mt-2">
-                            {uploadImages.map((img, i) => (
-                              <div key={i} className="relative group rounded-lg overflow-hidden border">
-                                <img src={URL.createObjectURL(img)} alt="" className="w-full h-20 object-cover" />
-                                <button
-                                  type="button"
-                                  onClick={() => setUploadImages(prev => prev.filter((_, idx) => idx !== i))}
-                                  className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                >×</button>
-                              </div>
-                            ))}
+                        {uploadFiles.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-xs text-muted-foreground">{uploadFiles.length} file(s) selected</p>
+                            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                              {uploadFiles.map((file, i) => (
+                                <div key={i} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30 group">
+                                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                                  <span className="text-sm truncate flex-1">{file.name}</span>
+                                  <span className="text-xs text-muted-foreground shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setUploadFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                    className="text-destructive hover:bg-destructive/10 rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
