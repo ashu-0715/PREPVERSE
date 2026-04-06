@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Search, Filter, Loader2, GraduationCap, BookOpen, Users, Calendar, Trophy } from "lucide-react";
+import ModuleBackground from "@/components/ModuleBackground";
 import { toast } from "sonner";
 import { SkillPost, CATEGORY_OPTIONS, SkillCategory } from "@/types/skillswap";
 import { CreatePostDialog } from "@/components/skillswap/CreatePostDialog";
@@ -106,9 +107,10 @@ const SkillSwap = () => {
   const requestPosts = filteredPosts.filter((p) => p.post_type === "request");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      <ModuleBackground theme="skillswap" />
       {/* Header */}
-      <header className="border-b bg-card shadow-sm sticky top-0 z-10">
+      <header className="border-b bg-card/80 backdrop-blur-sm shadow-sm sticky top-0 z-10 relative">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

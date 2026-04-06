@@ -14,6 +14,7 @@ import RunAndRevise from "@/components/gamezone/RunAndRevise";
 import GameDashboard from "@/components/gamezone/GameDashboard";
 import NoteSelector from "@/components/gamezone/NoteSelector";
 import { motion } from "framer-motion";
+import ModuleBackground from "@/components/ModuleBackground";
 import {
   Gamepad2, ArrowLeft, Swords, Shield, Upload, Trophy,
   Zap, Play, Trash2, PersonStanding
@@ -183,9 +184,10 @@ const GameZone = () => {
   // gameModes moved above early returns
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      <ModuleBackground theme="gamezone" />
       {/* Header */}
-      <header className="border-b bg-card shadow-sm">
+      <header className="border-b bg-card/80 backdrop-blur-sm shadow-sm relative z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
@@ -200,7 +202,7 @@ const GameZone = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
+      <main className="container mx-auto px-4 py-8 space-y-8 relative z-10">
         <Tabs defaultValue="play" className="w-full">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
             <TabsTrigger value="play" className="gap-1">

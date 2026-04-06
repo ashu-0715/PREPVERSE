@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { NoteReviewDialog } from "@/components/NoteReviewDialog";
 import { motion } from "framer-motion";
+import ModuleBackground from "@/components/ModuleBackground";
 
 interface Note {
   id: string;
@@ -382,8 +383,9 @@ const Notes = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card shadow-sm">
+    <div className="min-h-screen bg-background relative">
+      <ModuleBackground theme="notes" />
+      <header className="border-b bg-card/80 backdrop-blur-sm shadow-sm relative z-10">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back
@@ -392,7 +394,7 @@ const Notes = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative z-10">
         <div className="mb-6">
           <Card className="p-6 bg-gradient-card shadow-card">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
