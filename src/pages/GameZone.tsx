@@ -187,7 +187,7 @@ const GameZone = () => {
     <div className="min-h-screen bg-background relative">
       <ModuleBackground theme="gamezone" />
       {/* Header */}
-      <header className="border-b bg-card shadow-sm">
+      <header className="border-b bg-card/80 backdrop-blur-sm shadow-sm relative z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
