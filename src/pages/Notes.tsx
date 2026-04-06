@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { NoteReviewDialog } from "@/components/NoteReviewDialog";
 import { motion } from "framer-motion";
+import ModuleBackground from "@/components/ModuleBackground";
 
 interface Note {
   id: string;

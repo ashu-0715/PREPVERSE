@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Search, Filter, Loader2, GraduationCap, BookOpen, Users, Calendar, Trophy } from "lucide-react";
+import ModuleBackground from "@/components/ModuleBackground";
 import { toast } from "sonner";
 import { SkillPost, CATEGORY_OPTIONS, SkillCategory } from "@/types/skillswap";
 import { CreatePostDialog } from "@/components/skillswap/CreatePostDialog";
