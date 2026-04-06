@@ -102,6 +102,7 @@ const Dashboard = () => {
       icon: Target,
       path: "/career",
       color: "bg-gradient-to-br from-purple-500 to-pink-500",
+      image: moduleCareer,
     },
     {
       title: "Tech Tracker",
@@ -109,6 +110,7 @@ const Dashboard = () => {
       icon: TrendingUp,
       path: "/tracker",
       color: "bg-gradient-to-br from-blue-500 to-cyan-500",
+      image: moduleTracker,
     },
     {
       title: "Notes Sharing",
@@ -116,6 +118,7 @@ const Dashboard = () => {
       icon: FileText,
       path: "/notes",
       color: "bg-gradient-to-br from-green-500 to-emerald-500",
+      image: moduleNotes,
     },
     {
       title: "SkillSwap",
@@ -123,6 +126,7 @@ const Dashboard = () => {
       icon: Users,
       path: "/skillswap",
       color: "bg-gradient-to-br from-orange-500 to-red-500",
+      image: moduleSkillswap,
     },
     {
       title: "Exam Support",
@@ -130,6 +134,7 @@ const Dashboard = () => {
       icon: BookOpen,
       path: "/exam",
       color: "bg-gradient-to-br from-indigo-500 to-purple-500",
+      image: moduleExam,
     },
     {
       title: "Game Zone",
@@ -137,6 +142,7 @@ const Dashboard = () => {
       icon: Gamepad2,
       path: "/gamezone",
       color: "bg-gradient-to-br from-pink-500 to-rose-500",
+      image: moduleGamezone,
     },
   ];
 
