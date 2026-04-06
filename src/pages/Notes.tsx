@@ -394,7 +394,7 @@ const Notes = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative z-10">
         <div className="mb-6">
           <Card className="p-6 bg-gradient-card shadow-card">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

@@ -122,7 +122,7 @@ const Career = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
         {step === 1 && (
           <Card className="p-8 shadow-elegant">
             <div className="flex items-center gap-2 mb-4">

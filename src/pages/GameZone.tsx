@@ -202,7 +202,7 @@ const GameZone = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
+      <main className="container mx-auto px-4 py-8 space-y-8 relative z-10">
         <Tabs defaultValue="play" className="w-full">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
             <TabsTrigger value="play" className="gap-1">
