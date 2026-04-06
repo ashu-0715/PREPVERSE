@@ -184,7 +184,8 @@ const GameZone = () => {
   // gameModes moved above early returns
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      <ModuleBackground theme="gamezone" />
       {/* Header */}
       <header className="border-b bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
