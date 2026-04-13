@@ -25,7 +25,7 @@ const ModuleBackground = ({ theme }: { theme: ModuleTheme }) => {
         width={1920}
         height={1080}
       />
-      <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
+      <div className="absolute inset-0 bg-background/70 dark:bg-background/75" />
     </div>
   );
 };
