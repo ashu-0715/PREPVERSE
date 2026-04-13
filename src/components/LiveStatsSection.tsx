@@ -50,20 +50,14 @@ const LiveStatsSection = () => {
   }, []);
 
   const fetchStats = async () => {
-    const [profilesRes, notesRes, gamesRes, skillsRes] = await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact", head: true }),
-      supabase.from("notes").select("id", { count: "exact", head: true }),
-      supabase.from("user_game_stats").select("games_played"),
-      supabase.from("skill_connections").select("id", { count: "exact", head: true }),
-    ]);
-
-    const totalGames = (gamesRes.data || []).reduce((sum, s) => sum + (s.games_played || 0), 0);
-
+    const { data, error } = await supabase.rpc("get_public_stats");
+    if (error || !data) return;
+    const d = data as { students: number; notes: number; games: number; skills: number };
     setStats([
-      { label: "Students Learning", value: profilesRes.count || 0, icon: Users, suffix: "+" },
-      { label: "Notes Shared", value: notesRes.count || 0, icon: FileText, suffix: "+" },
-      { label: "Games Played", value: totalGames, icon: Gamepad2, suffix: "+" },
-      { label: "Skills Exchanged", value: skillsRes.count || 0, icon: TrendingUp, suffix: "+" },
+      { label: "Students Learning", value: d.students || 0, icon: Users, suffix: "+" },
+      { label: "Notes Shared", value: d.notes || 0, icon: FileText, suffix: "+" },
+      { label: "Games Played", value: d.games || 0, icon: Gamepad2, suffix: "+" },
+      { label: "Skills Exchanged", value: d.skills || 0, icon: TrendingUp, suffix: "+" },
     ]);
   };
 
