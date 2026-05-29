@@ -21,12 +21,6 @@ import {
   Crown,
   Gamepad2,
 } from "lucide-react";
-import moduleCareer from "@/assets/module-career.jpg";
-import moduleTracker from "@/assets/module-tracker.jpg";
-import moduleNotes from "@/assets/module-notes.jpg";
-import moduleSkillswap from "@/assets/module-skillswap.jpg";
-import moduleExam from "@/assets/module-exam.jpg";
-import moduleGamezone from "@/assets/module-gamezone.jpg";
 
 interface Profile {
   id: string;
