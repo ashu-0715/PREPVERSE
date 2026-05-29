@@ -268,16 +268,8 @@ const Dashboard = () => {
               className="group cursor-pointer hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 overflow-hidden"
               onClick={() => navigate(module.path)}
             >
-              <div className="relative aspect-[3/2] overflow-hidden">
-                <img
-                  src={module.image}
-                  alt={module.title}
-                  loading="lazy"
-                  width={768}
-                  height={512}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className={`absolute inset-0 ${module.color} opacity-20`} />
+              <div className={`relative aspect-[3/2] overflow-hidden ${module.color} opacity-90`}>
+                <div className="absolute inset-0 bg-black/10" />
                 <div className="absolute bottom-3 left-4">
                   <module.icon className="w-8 h-8 text-white drop-shadow-lg" />
                 </div>
