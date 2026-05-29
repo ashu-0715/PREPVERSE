@@ -261,22 +261,22 @@ const Dashboard = () => {
 
         {/* Modules Grid */}
         <h3 className="text-xl font-semibold mb-4">Explore Modules</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {modules.map((module) => (
             <Card
               key={module.path}
-              className="group cursor-pointer hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+              className="group cursor-pointer hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 overflow-hidden h-full flex flex-col"
               onClick={() => navigate(module.path)}
             >
-              <div className={`relative aspect-[3/2] overflow-hidden ${module.color} opacity-90`}>
+              <div className={`relative aspect-square overflow-hidden ${module.color} opacity-90`}>
                 <div className="absolute inset-0 bg-black/10" />
-                <div className="absolute bottom-3 left-4">
-                  <module.icon className="w-8 h-8 text-white drop-shadow-lg" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <module.icon className="w-10 h-10 md:w-12 md:h-12 text-white drop-shadow-lg" />
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold mb-1">{module.title}</h3>
-                <p className="text-muted-foreground text-sm">{module.description}</p>
+              <div className="p-3 md:p-4 flex flex-col flex-1">
+                <h3 className="text-sm md:text-lg font-semibold mb-0.5 md:mb-1 leading-tight">{module.title}</h3>
+                <p className="text-muted-foreground text-xs md:text-sm leading-tight">{module.description}</p>
               </div>
             </Card>
           ))}
