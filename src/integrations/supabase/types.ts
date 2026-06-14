@@ -339,6 +339,180 @@ export type Database = {
           },
         ]
       }
+      gate_ai_chats: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gate_ai_messages: {
+        Row: {
+          chat_id: string
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          chat_id: string
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gate_ai_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "gate_ai_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gate_subjects: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          weight: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          weight?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          weight?: number
+        }
+        Relationships: []
+      }
+      gate_topics: {
+        Row: {
+          created_at: string
+          difficulty: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          subject_id: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          subject_id: string
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gate_topics_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "gate_subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gate_user_progress: {
+        Row: {
+          accuracy: number
+          attempts: number
+          created_at: string
+          id: string
+          last_revised_at: string | null
+          mastery: number
+          topic_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_revised_at?: string | null
+          mastery?: number
+          topic_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy?: number
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_revised_at?: string | null
+          mastery?: number
+          topic_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gate_user_progress_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "gate_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_purchases: {
         Row: {
           amount: number
