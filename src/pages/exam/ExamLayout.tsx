@@ -45,11 +45,11 @@ export default function ExamLayout() {
             <ArrowLeft className="w-4 h-4 mr-1" /> Dashboard
           </Button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="text-lg font-bold leading-tight bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">
                 GATE CSE Exam Support
               </h1>
               <p className="text-[10px] text-muted-foreground -mt-0.5">AI-powered preparation ecosystem</p>
@@ -65,7 +65,7 @@ export default function ExamLayout() {
               className={({ isActive }) =>
                 `flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
                   isActive
-                    ? "bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-foreground border border-indigo-500/30"
+                    ? "bg-gradient-to-r from-primary/20 to-primary/20 text-foreground border border-primary/30"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`
               }

@@ -92,7 +92,7 @@ export default function ExamMentor() {
     <div className="grid lg:grid-cols-[1fr_280px] gap-4 h-[calc(100vh-180px)]">
       <Card className="flex flex-col overflow-hidden bg-card/50 backdrop-blur">
         <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
@@ -104,8 +104,8 @@ export default function ExamMentor() {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 && (
             <div className="h-full flex flex-col items-center justify-center text-center gap-3 text-muted-foreground">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-600/20 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-indigo-400" />
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/20 flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <p className="font-medium text-foreground">Ask me anything about GATE CSE</p>
@@ -117,13 +117,13 @@ export default function ExamMentor() {
           {messages.map((m, i) => (
             <div key={i} className={`flex gap-3 ${m.role === "user" ? "justify-end" : ""}`}>
               {m.role === "assistant" && (
-                <Avatar className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600">
+                <Avatar className="w-8 h-8 bg-gradient-to-br from-primary to-primary">
                   <AvatarFallback className="bg-transparent"><Sparkles className="w-4 h-4 text-white" /></AvatarFallback>
                 </Avatar>
               )}
               <div className={`max-w-[80%] rounded-xl px-4 py-2.5 text-sm ${
                 m.role === "user"
-                  ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white"
+                  ? "bg-gradient-to-br from-primary to-primary text-white"
                   : "bg-muted/60"
               }`}>
                 {m.role === "assistant" ? (
@@ -144,7 +144,7 @@ export default function ExamMentor() {
 
           {loading && messages[messages.length - 1]?.role === "user" && (
             <div className="flex gap-3">
-              <Avatar className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600">
+              <Avatar className="w-8 h-8 bg-gradient-to-br from-primary to-primary">
                 <AvatarFallback className="bg-transparent"><Sparkles className="w-4 h-4 text-white" /></AvatarFallback>
               </Avatar>
               <div className="bg-muted/60 rounded-xl px-4 py-2.5 text-sm flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function ExamMentor() {
             className="resize-none min-h-[40px] max-h-32"
             disabled={loading}
           />
-          <Button onClick={() => send()} disabled={loading || !input.trim()} className="bg-gradient-to-r from-indigo-500 to-purple-600">
+          <Button onClick={() => send()} disabled={loading || !input.trim()} className="bg-gradient-to-r from-primary to-primary">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
@@ -182,7 +182,7 @@ export default function ExamMentor() {
                 key={s}
                 onClick={() => send(s)}
                 disabled={loading}
-                className="w-full text-left text-xs p-2 rounded-md border border-border/40 hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-colors disabled:opacity-50"
+                className="w-full text-left text-xs p-2 rounded-md border border-border/40 hover:border-primary/40 hover:bg-primary/5 transition-colors disabled:opacity-50"
               >
                 {s}
               </button>

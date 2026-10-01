@@ -39,7 +39,7 @@ export default function ExamSubjects() {
               </div>
               <Badge variant="outline" className="text-xs">{s.weight}% weight</Badge>
             </div>
-            <h3 className="font-semibold mb-1 group-hover:text-indigo-400 transition-colors">{s.name}</h3>
+            <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">{s.name}</h3>
             <p className="text-xs text-muted-foreground mb-3">Topics coming soon</p>
             <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
               <span>Mastery</span><span>0%</span>
