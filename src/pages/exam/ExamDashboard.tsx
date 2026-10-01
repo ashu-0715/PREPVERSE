@@ -35,10 +35,10 @@ export default function ExamDashboard() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <Card className="p-6 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 border-indigo-500/20">
+      <Card className="p-6 bg-gradient-to-br from-primary/10 via-primary/10 to-primary/10 border-primary/20">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 mb-2">
+            <Badge className="bg-primary/20 text-primary border-primary/30 mb-2">
               <Sparkles className="w-3 h-3 mr-1" /> AI-Powered
             </Badge>
             <h2 className="text-2xl md:text-3xl font-bold">Crack GATE CSE with confidence</h2>
@@ -49,7 +49,7 @@ export default function ExamDashboard() {
           <Button
             size="lg"
             onClick={() => navigate("/exam/mentor")}
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90"
+            className="bg-gradient-to-r from-primary to-primary hover:opacity-90"
           >
             Ask AI Mentor <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
@@ -74,7 +74,7 @@ export default function ExamDashboard() {
         <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-indigo-400" />
+              <Target className="w-4 h-4 text-primary" />
               <h3 className="font-semibold">Weekly Goals</h3>
             </div>
             <Badge variant="secondary" className="text-xs">0 / 5 done</Badge>
@@ -99,9 +99,9 @@ export default function ExamDashboard() {
         </Card>
 
         {/* AI Recommendation */}
-        <Card className="p-5 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
+        <Card className="p-5 bg-gradient-to-br from-primary/10 to-primary/10 border-primary/20">
           <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-4 h-4 text-purple-400" />
+            <Sparkles className="w-4 h-4 text-primary" />
             <h3 className="font-semibold">AI Recommends</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-3">
@@ -117,7 +117,7 @@ export default function ExamDashboard() {
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-indigo-400" />
+            <BookOpen className="w-4 h-4 text-primary" />
             <h3 className="font-semibold">Subject Mastery</h3>
           </div>
           <Button size="sm" variant="ghost" onClick={() => navigate("/exam/subjects")}>
@@ -126,7 +126,7 @@ export default function ExamDashboard() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {subjects.slice(0, 6).map((s) => (
-            <div key={s.id} className="p-3 rounded-lg border border-border/50 hover:border-indigo-500/40 transition-colors cursor-pointer"
+            <div key={s.id} className="p-3 rounded-lg border border-border/50 hover:border-primary/40 transition-colors cursor-pointer"
               onClick={() => navigate("/exam/subjects")}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium truncate">{s.name}</span>
