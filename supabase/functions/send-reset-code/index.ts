@@ -108,15 +108,15 @@ const handler = async (req: Request): Promise<Response> => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "PrepVerse <onboarding@resend.dev>",
+        from: "Pathora <onboarding@resend.dev>",
         to: [email],
-        subject: "Password Reset Code - PrepVerse",
+        subject: "Password Reset Code - Pathora",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #6366f1;">PrepVerse Password Reset</h1>
+            <h1 style="color: #df603f;">Pathora Password Reset</h1>
             <p>You requested to reset your password. Use the following code:</p>
             <div style="background: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-              <span style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #6366f1;">${code}</span>
+              <span style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #df603f;">${code}</span>
             </div>
             <p>This code will expire in 10 minutes.</p>
             <p>If you didn't request this, you can safely ignore this email.</p>

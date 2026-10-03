@@ -82,7 +82,7 @@ const LiveStatsSection = () => {
             <span className="bg-gradient-primary bg-clip-text text-transparent">Community</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Students already learning smarter with PrepVerse
+            Students already learning smarter with Pathora
           </p>
         </motion.div>
 

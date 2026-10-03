@@ -104,12 +104,12 @@ const Auth = () => {
         <div className="flex items-center justify-center mb-6">
           <GraduationCap className="w-10 h-10 text-primary mr-2" />
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            PrepVerse
+            Pathora
           </h1>
         </div>
 
         <h2 className="text-2xl font-semibold text-center mb-6">
-          {isLogin ? "Welcome Back" : "Join PrepVerse"}
+          {isLogin ? "Welcome Back" : "Join Pathora"}
         </h2>
 
         {/* Login Type Selection for Login */}

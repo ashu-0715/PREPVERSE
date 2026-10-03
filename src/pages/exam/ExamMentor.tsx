@@ -96,7 +96,7 @@ export default function ExamMentor() {
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm">PrepVerse Mentor</h3>
+            <h3 className="font-semibold text-sm">Pathora Mentor</h3>
             <p className="text-[10px] text-muted-foreground">GATE CSE · AI tutor</p>
           </div>
         </div>

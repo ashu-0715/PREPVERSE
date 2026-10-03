@@ -23,7 +23,7 @@ export function AppNav({ onLogout }: { onLogout?: () => void }) {
             <span className="w-8 h-8 rounded-xl bg-primary text-primary-foreground grid place-items-center">
               <GraduationCap className="w-4 h-4" />
             </span>
-            PrepVerse
+            Pathora
           </button>
           <nav className="hidden md:flex items-center gap-1">
             {links.map((l) => (
