@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Target, FileText, Users, BookOpen, Gamepad2, GraduationCap, ArrowRight } from "lucide-react";
-import heroImage from "@/assets/hero-image.jpg";
+import heroImage from "@/assets/pathora-students.jpg";
 import FoundersSection from "@/components/FoundersSection";
 import LiveStatsSection from "@/components/LiveStatsSection";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -25,7 +25,7 @@ const Index = () => {
             <span className="w-8 h-8 rounded-xl bg-primary text-primary-foreground grid place-items-center">
               <GraduationCap className="w-4 h-4" />
             </span>
-            PrepVerse
+            Pathora
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -49,14 +49,14 @@ const Index = () => {
             </p>
             <div className="flex flex-wrap gap-3 mt-8">
               <Button size="lg" className="lift" onClick={() => navigate("/auth")}>
-                Explore PrepVerse <ArrowRight className="w-4 h-4 ml-1" />
+                Explore Pathora <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
               <Button size="lg" variant="outline" className="lift" onClick={() => navigate("/dashboard")}>
                 Continue learning
               </Button>
             </div>
           </div>
-          <img src={heroImage} alt="Students learning together" className="rounded-3xl shadow-elegant w-full object-cover aspect-[4/3]" />
+          <img src={heroImage} alt="College students collaborating over a laptop and study notes" width={1600} height={1024} className="rounded-3xl shadow-elegant w-full object-cover aspect-[4/3]" />
         </div>
       </section>
 
@@ -96,7 +96,7 @@ const Index = () => {
       </section>
 
       <footer className="border-t py-8 text-center text-sm text-muted-foreground">
-        © 2026 PrepVerse. Built with care for students.
+        © 2026 Pathora. Built with care for students.
       </footer>
     </div>
   );

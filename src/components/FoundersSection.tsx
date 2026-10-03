@@ -66,7 +66,7 @@ const FoundersSection = () => {
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
             <Lightbulb className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">The Vision Behind PrepVerse</span>
+            <span className="text-sm font-medium text-primary">The Vision Behind Pathora</span>
           </div>
           <h2 className="text-4xl font-bold mb-4">Meet Our Founders</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">

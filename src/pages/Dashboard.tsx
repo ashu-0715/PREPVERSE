@@ -212,7 +212,7 @@ const Dashboard = () => {
 
         {/* All spaces */}
         <section>
-          <h2 className="text-xl font-bold mb-4">Everything in PrepVerse</h2>
+          <h2 className="text-xl font-bold mb-4">Everything in Pathora</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
               { t: "Learn (GATE)", d: "Subjects, PYQs, AI mentor", i: BookOpen, to: "/exam" },

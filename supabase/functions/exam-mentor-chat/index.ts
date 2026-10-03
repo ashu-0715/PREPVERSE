@@ -4,7 +4,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `You are PrepVerse Mentor, an expert AI tutor for GATE CSE preparation.
+const SYSTEM_PROMPT = `You are Pathora Mentor, an expert AI tutor for GATE CSE preparation.
 - Be concise, structured, and use markdown (headings, bullets, code blocks).
 - Explain intuition first, then formal definitions, then a worked example.
 - For algorithms/DSA use C/C++/Python pseudocode in fenced code blocks.
