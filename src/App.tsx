@@ -22,6 +22,10 @@ import ExamDashboard from "./pages/exam/ExamDashboard";
 import ExamSubjects from "./pages/exam/ExamSubjects";
 import ExamMentor from "./pages/exam/ExamMentor";
 import ExamPlaceholder from "./pages/exam/ExamPlaceholder";
+import ExamRevision from "./pages/exam/ExamRevision";
+import ExamPlanner from "./pages/exam/ExamPlanner";
+import ExamAnalytics from "./pages/exam/ExamAnalytics";
+import ExamMocks from "./pages/exam/ExamMocks";
 
 const queryClient = new QueryClient();
 
@@ -50,10 +54,10 @@ const App = () => (
               <Route path="subjects" element={<ExamSubjects />} />
               <Route path="mentor" element={<ExamMentor />} />
               <Route path="pyqs" element={<ExamPlaceholder title="Previous Year Questions" description="GATE PYQs 2010-2024 with AI explanations" />} />
-              <Route path="mocks" element={<ExamPlaceholder title="Mock Tests" description="Topic, subject, and full-length GATE mocks with AI analysis" />} />
-              <Route path="revision" element={<ExamPlaceholder title="Smart Revision" description="AI-generated flashcards and spaced repetition" />} />
-              <Route path="planner" element={<ExamPlaceholder title="Study Planner" description="AI-generated personalized study plan" />} />
-              <Route path="analytics" element={<ExamPlaceholder title="Analytics" description="Performance trends, weakness map, and rank prediction" />} />
+              <Route path="mocks" element={<ExamMocks />} />
+              <Route path="revision" element={<ExamRevision />} />
+              <Route path="planner" element={<ExamPlanner />} />
+              <Route path="analytics" element={<ExamAnalytics />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

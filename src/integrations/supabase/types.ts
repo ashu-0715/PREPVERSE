@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -397,6 +397,105 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      gate_flashcards: {
+        Row: {
+          back: string
+          correct: number
+          created_at: string
+          due_at: string
+          front: string
+          id: string
+          interval_days: number
+          reviews: number
+          subject_slug: string
+          topic: string | null
+          user_id: string
+        }
+        Insert: {
+          back: string
+          correct?: number
+          created_at?: string
+          due_at?: string
+          front: string
+          id?: string
+          interval_days?: number
+          reviews?: number
+          subject_slug: string
+          topic?: string | null
+          user_id: string
+        }
+        Update: {
+          back?: string
+          correct?: number
+          created_at?: string
+          due_at?: string
+          front?: string
+          id?: string
+          interval_days?: number
+          reviews?: number
+          subject_slug?: string
+          topic?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gate_quiz_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          score: number
+          subject_slug: string
+          time_taken_s: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          score: number
+          subject_slug: string
+          time_taken_s?: number
+          total: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          score?: number
+          subject_slug?: string
+          time_taken_s?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gate_study_plans: {
+        Row: {
+          completed: Json
+          created_at: string
+          hours_per_day: number
+          id: string
+          plan: Json
+          user_id: string
+        }
+        Insert: {
+          completed?: Json
+          created_at?: string
+          hours_per_day?: number
+          id?: string
+          plan: Json
+          user_id: string
+        }
+        Update: {
+          completed?: Json
+          created_at?: string
+          hours_per_day?: number
+          id?: string
+          plan?: Json
+          user_id?: string
+        }
+        Relationships: []
       }
       gate_subjects: {
         Row: {
